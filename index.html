@@ -58,7 +58,7 @@
             <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" required></div>
             <div class="form-group"><label for="unita">Unità</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
             <input type="hidden" id="edit-id">
-            <button type="submit" id="submit-button">Aggiungi</button>
+            <button type="button" id="submit-button">Aggiungi</button>
         </form>
     </div>
 
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refs.weekElements.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
     };
     
-    refs.form.addEventListener('submit', gestisciSubmitForm);
+    refs.submitBtn.addEventListener('click', gestisciSubmitForm);
     refs.category.addEventListener('change', gestisciCambioCategoria);
     refs.productSelect.addEventListener('change', gestisciSelezioneProdotto);
 
