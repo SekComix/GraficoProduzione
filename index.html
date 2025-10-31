@@ -4,10 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Grafico Produzione</title>
-    <!-- Per ora non colleghiamo manifest né service worker -->
-    <!-- <link rel="manifest" href="manifest.json"> -->
-    <!-- <link rel="icon" href="logo.png" type="image/png"> -->
-    <!-- <link rel="apple-touch-icon" href="logo.png"> -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0056b3">
     
     <style>
         :root {
@@ -15,13 +14,7 @@
             --danger-color: #dc3545; --warning-color: #ffc107; --light-gray: #f0f2f5;
             --border-color: #dee2e6;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--light-gray);
-            margin: 0;
-            padding: 10px;
-            -webkit-tap-highlight-color: transparent; /* Rimuove il flash blu al tocco su mobile */
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light-gray); margin: 0; padding: 10px; }
         .container { max-width: 800px; margin: 0 auto; }
         .app-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .logo-img { width: 50px; height: 50px; object-fit: contain; background-color: #eee; border-radius: 8px; }
@@ -31,86 +24,54 @@
         h3 { color: var(--primary-color); margin: 0; padding: 0; border: none; }
         .form-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: #fff;
-        }
-        input:focus, select:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.25); }
-        button { border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
-        button:active { transform: scale(0.98); }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #fff; }
+        button { border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
         #form-produzione { display: grid; grid-template-columns: 1fr; gap: 15px; }
         #form-produzione button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; margin-top: 10px; }
         .riepilogo-box { margin-bottom: 20px; }
         .box-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
-        .nav-controls { display: flex; gap: 5px; }
-        .nav-btn { background-color: #e9ecef; border: 1px solid #ced4da; color: #495057; padding: 2px 8px; border-radius: 4px; }
         .sottotitolo { font-style: italic; color: var(--secondary-color); margin: 0 0 15px 0; text-align: center; }
         .totali { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 15px; }
         .totali p { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; margin: 5px 0; }
-        .totali span { background-color: #e9ecef; padding: 2px 8px; border-radius: 4px; color: var(--primary-color); font-weight: normal; }
+        .totali span { font-weight: normal; }
         #elenco-produzioni { list-style-type: none; padding: 0; margin-top: 20px; min-height: 50px; }
         #elenco-produzioni li { background-color: #fff; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .modifica-btn, .cancella-btn { padding: 5px 10px; white-space: nowrap; }
-        .modifica-btn { background-color: var(--warning-color); color: #212529; }
-        .cancella-btn { background-color: var(--danger-color); color: white; }
-        .stampa-btn { background-color: var(--secondary-color); color: white; padding: 10px 15px; margin-top: 20px; align-self: flex-end; width: auto; }
         .hidden { display: none !important; }
-
-        /* Stili per il layout responsivo del form */
-        @media (min-width: 600px) {
-            #form-produzione {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
+        @media (min-width: 600px) { #form-produzione { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="app-header">
-        <div class="logo-img"></div> <!-- Placeholder per il logo -->
+        <div class="logo-img"></div>
         <h1>Grafico Produzione</h1>
     </div>
 
     <div class="card" id="form-card">
-        <h2>Aggiungi Voce</h2>
+        <h2 id="form-title">Aggiungi Voce</h2>
         <form id="form-produzione" onsubmit="return false;">
             <div class="form-group"><label for="data">Data</label><input type="date" id="data" required></div>
-            <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona Categoria --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
-            <div class="form-group hidden" id="prodotto-select-wrapper">
-                <label for="prodotto-select" id="label-prodotto"></label>
-                <select id="prodotto-select"></select>
-            </div>
-            <div class="form-group hidden" id="prodotto-input-wrapper">
-                <label for="prodotto-input" id="label-prodotto-input"></label>
-                <input type="text" id="prodotto-input" placeholder="Digita il nuovo nome">
-            </div>
-            <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" placeholder="Es. 4,5" required></div>
-            <div class="form-group"><label for="unita">Unità di Misura</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
+            <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
+            <div class="form-group hidden" id="prodotto-select-wrapper"><label for="prodotto-select" id="label-prodotto"></label><select id="prodotto-select"></select></div>
+            <div class="form-group hidden" id="prodotto-input-wrapper"><label for="prodotto-input" id="label-prodotto-input"></label><input type="text" id="prodotto-input"></div>
+            <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" required></div>
+            <div class="form-group"><label for="unita">Unità</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
             <input type="hidden" id="edit-id">
             <button type="submit" id="submit-button">Aggiungi</button>
         </form>
     </div>
 
     <div class="card riepilogo-box" id="box-settimanale">
-        <div class="box-header"><h3>Riepilogo Settimanale</h3><div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div></div>
-        <p class="sottotitolo" id="intervallo-settimana">...</p>
-        <div class="totali"><p>Punti Vendita (Kg): <span>0,0</span></p><p>Punti Vendita (Pz): <span>0</span></p><p>Biscotti (Kg): <span>0,0</span></p><p>Biscotti (Pz): <span>0</span></p></div>
-        <ul id="elenco-produzioni"><li>Nessuna produzione per questa settimana.</li></ul>
-        <button id="stampa-settimana" class="stampa-btn">Stampa Riepilogo</button>
+        <div class="box-header"><h3>Riepilogo Settimanale</h3></div>
+        <p class="sottotitolo" id="intervallo-settimana"></p>
+        <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-sett-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-sett-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-sett-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-sett-pz">0</span></p></div>
+        <ul id="elenco-produzioni"></ul>
     </div>
-    <!-- Altri riepiloghi verranno aggiunti dopo -->
 </div>
 
-<!-- Lo script JavaScript verrà inserito qui sotto -->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // Riferimenti agli elementi del DOM
     const refs = {
         form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
@@ -128,19 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
         productInput: document.getElementById('prodotto-input'),
         productInputLabel: document.getElementById('label-prodotto-input'),
         weekSub: document.getElementById('intervallo-settimana'),
-        weekElements: { 
-            kgPv: document.querySelector('#box-settimanale [id^="tot-past-sett-kg"]'), 
-            pzPv: document.querySelector('#box-settimanale [id^="tot-past-sett-pz"]'), 
-            kgBisc: document.querySelector('#box-settimanale [id^="tot-forno-sett-kg"]'), 
-            pzBisc: document.querySelector('#box-settimanale [id^="tot-forno-sett-pz"]') 
-        }
+        weekElements: { kgPv: document.getElementById('tot-pv-sett-kg'), pzPv: document.getElementById('tot-pv-sett-pz'), kgBisc: document.getElementById('tot-bisc-sett-kg'), pzBisc: document.getElementById('tot-bisc-sett-pz') },
     };
 
-    const CATALOGO_VERSIONE = '5.0'; // Versione alta per forzare reset
-    let data = {
-        produzioni: [],
-        catalogo: {},
-    };
+    const CATALOGO_VERSIONE = '5.1';
+    let data = { produzioni: [], catalogo: {} };
 
     const catalogoDefault = {
         "Mondadori": { categoria: "Punti Vendita", unita: "Kg" }, "Palazzolo": { categoria: "Punti Vendita", unita: "Kg" }, "Osio": { categoria: "Punti Vendita", unita: "Kg" }, "Cassano": { categoria: "Punti Vendita", unita: "Kg" }, "Carugate": { categoria: "Punti Vendita", unita: "Kg" }, "Negozio": { categoria: "Punti Vendita", unita: "Kg" }, "Ordini": { categoria: "Punti Vendita", unita: "Kg" },
@@ -148,22 +101,14 @@ document.addEventListener('DOMContentLoaded', () => {
         "Fave": { categoria: "Biscotti", unita: "Pezzi" }, "Pane dei morti": { categoria: "Biscotti", unita: "Pezzi" }
     };
 
-    const salvaDati = () => {
-        const appData = {
-            produzioni: data.produzioni,
-            catalogo: data.catalogo,
-            catalogoVersione: CATALOGO_VERSIONE
-        };
-        localStorage.setItem('graficoProduzioneData', JSON.stringify(appData));
-    };
-
+    const salvaDati = () => { localStorage.setItem('graficoProduzioneData_v2', JSON.stringify({ version: CATALOGO_VERSIONE, catalogo: data.catalogo, produzioni: data.produzioni })); };
     const caricaDati = () => {
-        const appData = JSON.parse(localStorage.getItem('graficoProduzioneData')) || {};
-        data.produzioni = appData.produzioni || [];
-        if (appData.catalogoVersione !== CATALOGO_VERSIONE) {
-            data.catalogo = { ...catalogoDefault, ...(appData.catalogo || {}) };
+        const savedData = JSON.parse(localStorage.getItem('graficoProduzioneData_v2')) || {};
+        data.produzioni = savedData.produzioni || [];
+        if (savedData.version !== CATALOGO_VERSIONE) {
+            data.catalogo = { ...catalogoDefault, ...savedData.catalogo };
         } else {
-            data.catalogo = appData.catalogo || catalogoDefault;
+            data.catalogo = savedData.catalogo || catalogoDefault;
         }
         salvaDati();
     };
@@ -195,125 +140,98 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const gestisciCambioCategoria = () => {
-        const categoriaSelezionata = refs.category.value;
+        const cat = refs.category.value;
         refs.unit.value = 'Kg';
         refs.productSelectWrapper.classList.add('hidden');
         refs.productInputWrapper.classList.add('hidden');
-        if (categoriaSelezionata) {
-            refs.productLabel.textContent = (categoriaSelezionata === "Punti Vendita") ? "Punto Vendita:" : "Nome Prodotto:";
+        if (cat) {
+            refs.productLabel.textContent = (cat === "Punti Vendita") ? "Punto Vendita:" : "Nome Prodotto:";
             refs.productSelectWrapper.classList.remove('hidden');
-            popolaProdottiSelect(categoriaSelezionata);
+            popolaProdottiSelect(cat);
         }
     };
 
     const gestisciSelezioneProdotto = () => {
-        const prodottoSelezionato = refs.productSelect.value;
-        if (prodottoSelezionato === '---altro---') {
+        const prod = refs.productSelect.value;
+        if (prod === '---altro---') {
             refs.productInputWrapper.classList.remove('hidden');
             refs.productInput.value = '';
             refs.productInput.focus();
             refs.productInputLabel.textContent = (refs.category.value === "Punti Vendita") ? "Nuovo Punto Vendita:" : "Nuovo Prodotto:";
         } else {
             refs.productInputWrapper.classList.add('hidden');
-            if (data.catalogo[prodottoSelezionato]) {
-                refs.unit.value = data.catalogo[prodottoSelezionato].unita;
-            }
+            if (data.catalogo[prod]) refs.unit.value = data.catalogo[prod].unita;
         }
     };
 
     const gestisciSubmitForm = (event) => {
-        event.preventDefault();
-        const quantitaStringa = refs.quantity.value.replace(',', '.');
-        const quantitaNumero = parseFloat(quantitaStringa);
-        if (isNaN(quantitaNumero) || quantitaNumero <= 0) return alert('Per favore, inserisci una quantità valida.');
+        const quantitaNum = parseFloat(refs.quantity.value.replace(',', '.'));
+        if (isNaN(quantitaNum) || quantitaNum <= 0) return alert('Quantità non valida.');
         
-        let nomeProdotto = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
-        if (!nomeProdotto) return alert('Per favore, seleziona o inserisci un prodotto/punto vendita.');
+        let nomeProd = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
+        if (!nomeProd) return alert('Seleziona o inserisci un prodotto.');
 
-        const categoriaSelezionata = refs.category.value;
-        const unitaSelezionata = refs.unit.value;
-        data.catalogo[nomeProdotto] = { categoria: categoriaSelezionata, unita: unitaSelezionata };
+        const cat = refs.category.value;
+        const unita = refs.unit.value;
+        data.catalogo[nomeProd] = { categoria: cat, unita: unita };
         
-        const idDaModificare = refs.editId.value;
-        if (idDaModificare) {
-            const index = data.produzioni.findIndex(p => p.id == idDaModificare);
-            if (index !== -1) data.produzioni[index] = { ...data.produzioni[index], data: refs.date.value, prodotto: nomeProdotto, quantita: quantitaNumero, categoria: categoriaSelezionata, unita: unitaSelezionata };
+        const id = refs.editId.value;
+        if (id) {
+            const index = data.produzioni.findIndex(p => p.id == id);
+            if (index !== -1) data.produzioni[index] = { ...data.produzioni[index], data: refs.date.value, prodotto: nomeProd, quantita: quantitaNum, categoria: cat, unita: unita };
         } else {
-            data.produzioni.unshift({ id: Date.now(), data: refs.date.value, prodotto: nomeProdotto, quantita: quantitaNumero, categoria: categoriaSelezionata, unita: unitaSelezionata });
+            data.produzioni.unshift({ id: Date.now(), data: refs.date.value, prodotto: nomeProd, quantita: quantitaNum, categoria: cat, unita: unita });
         }
-        data.produzioni.sort((a, b) => new Date(b.data) - new Date(a.data));
+        
         salvaDati();
         aggiornaUI();
         resettaForm();
     };
+
     const aggiornaUI = () => {
         const oggi = new Date();
-        const anno = oggi.getFullYear();
-        const mese = oggi.getMonth();
-        const giorno = oggi.getDate();
+        const produzioniSettimana = data.produzioni.filter(p => {
+             const d = new Date(p.data);
+             const inizioSettimana = new Date(oggi);
+             inizioSettimana.setDate(oggi.getDate() - (oggi.getDay() + 6) % 7);
+             return d >= inizioSettimana;
+        });
         
-        const primoGiornoMese = new Date(anno, mese, 1);
-        const offset = (primoGiornoMese.getDay() === 0) ? 6 : primoGiornoMese.getDay() - 1;
-        const settimanaDelMese = Math.floor((giorno + offset - 1) / 7);
-        let inizioGiornoSett = settimanaDelMese * 7 - offset + 1;
-        if (inizioGiornoSett < 1) inizioGiornoSett = 1;
-        let fineGiornoSett = inizioGiornoSett + 6;
-        const ultimoGiornoMese = new Date(anno, mese + 1, 0).getDate();
-        if (fineGiornoSett > ultimoGiornoMese) fineGiornoSett = ultimoGiornoMese;
-
-        const primoGiornoSettimana = new Date(anno, mese, inizioGiornoSett);
-        const ultimoGiornoSettimana = new Date(anno, mese, fineGiornoSett);
-
-        const produzioniSettimana = data.produzioni.filter(p => { 
-            const d = new Date(p.data); 
-            d.setHours(12,0,0,0);
-            return d >= primoGiornoSettimana && d <= ultimoGiornoSettimana; 
-        });
-
-        aggiornaListaDettaglio(produzioniSettimana);
-        aggiornaBoxRiepilogo(produzioniSettimana, refs.weekElements);
-
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        refs.weekSub.textContent = `Da ${primoGiornoSettimana.toLocaleDateString('it-IT', options)} a ${ultimoGiornoSettimana.toLocaleDateString('it-IT', options)}`;
-    };
-
-    const aggiornaListaDettaglio = (dati) => {
         refs.list.innerHTML = '';
-        if(dati.length === 0){
+        if(produzioniSettimana.length === 0){
             refs.list.innerHTML = '<li>Nessuna produzione per questa settimana.</li>';
-            return;
+        } else {
+            produzioniSettimana.sort((a,b) => new Date(b.data) - new Date(a.data));
+            produzioniSettimana.forEach(prod => {
+                const dataF = new Date(prod.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+                refs.list.innerHTML += `<li><span>${dataF} - ${prod.prodotto}: ${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</span></li>`;
+            });
         }
-        dati.forEach(prod => {
-            const dataFormattata = new Date(prod.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
-            refs.list.innerHTML += `<li><span>${dataFormattata} - ${prod.prodotto}: ${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</span><div><button class="modifica-btn" data-id="${prod.id}">Modifica</button><button class="cancella-btn" data-id="${prod.id}">Cancella</button></div></li>`;
-        });
-    };
-
-    const calcolaTotali = (dati) => {
+        
         const totali = { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 };
-        dati.forEach(p => {
+        produzioniSettimana.forEach(p => {
             if (p.categoria === 'Punti Vendita') {
                 if (p.unita === 'Kg') totali.puntiVenditaKg += p.quantita; else totali.puntiVenditaPz += p.quantita;
             } else if (p.categoria === 'Biscotti') {
                 if (p.unita === 'Kg') totali.biscottiKg += p.quantita; else totali.biscottiPz += p.quantita;
             }
         });
-        return totali;
-    };
 
-    const aggiornaBoxRiepilogo = (dati, elementi) => {
-        const totali = calcolaTotali(dati);
-        elementi.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
-        elementi.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
-        elementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
-        elementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
+        refs.weekElements.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
+        refs.weekElements.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
+        refs.weekElements.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
+        refs.weekElements.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
     };
+    
+    refs.form.addEventListener('submit', gestisciSubmitForm);
+    refs.category.addEventListener('change', gestisciCambioCategoria);
+    refs.productSelect.addEventListener('change', gestisciSelezioneProdotto);
 
-    // INIZIALIZZAZIONE
     caricaDati();
     resettaForm();
     aggiornaUI();
 });
 </script>
+
 </body>
 </html>
