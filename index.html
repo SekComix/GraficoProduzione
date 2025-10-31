@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Grafico Produzione</title>
+    <!-- Per ora non colleghiamo manifest né service worker -->
+    <!-- <link rel="manifest" href="manifest.json"> -->
+    <!-- <link rel="icon" href="logo.png" type="image/png"> -->
+    <!-- <link rel="apple-touch-icon" href="logo.png"> -->
+    
+    <style>
+        :root {
+            --primary-color: #0056b3; --secondary-color: #6c757d; --success-color: #198754;
+            --danger-color: #dc3545; --warning-color: #ffc107; --light-gray: #f0f2f5;
+            --border-color: #dee2e6;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 10px;
+            -webkit-tap-highlight-color: transparent; /* Rimuove il flash blu al tocco su mobile */
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .app-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .logo-img { width: 50px; height: 50px; object-fit: contain; background-color: #eee; border-radius: 8px; }
+        h1 { margin: 0; flex-grow: 1; font-size: 22px; color: var(--primary-color); }
+        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        h2 { border-bottom: 2px solid var(--light-gray); padding-bottom: 10px; font-size: 20px; color: var(--primary-color); margin-top: 0; }
+        h3 { color: var(--primary-color); margin: 0; padding: 0; border: none; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            background-color: #fff;
+        }
+        input:focus, select:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.25); }
+        button { border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+        button:active { transform: scale(0.98); }
+        #form-produzione { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        #form-produzione button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; margin-top: 10px; }
+        .riepilogo-box { margin-bottom: 20px; }
+        .box-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+        .nav-controls { display: flex; gap: 5px; }
+        .nav-btn { background-color: #e9ecef; border: 1px solid #ced4da; color: #495057; padding: 2px 8px; border-radius: 4px; }
+        .sottotitolo { font-style: italic; color: var(--secondary-color); margin: 0 0 15px 0; text-align: center; }
+        .totali { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 15px; }
+        .totali p { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; margin: 5px 0; }
+        .totali span { background-color: #e9ecef; padding: 2px 8px; border-radius: 4px; color: var(--primary-color); font-weight: normal; }
+        #elenco-produzioni { list-style-type: none; padding: 0; margin-top: 20px; min-height: 50px; }
+        #elenco-produzioni li { background-color: #fff; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .modifica-btn, .cancella-btn { padding: 5px 10px; white-space: nowrap; }
+        .modifica-btn { background-color: var(--warning-color); color: #212529; }
+        .cancella-btn { background-color: var(--danger-color); color: white; }
+        .stampa-btn { background-color: var(--secondary-color); color: white; padding: 10px 15px; margin-top: 20px; align-self: flex-end; width: auto; }
+        .hidden { display: none !important; }
+
+        /* Stili per il layout responsivo del form */
+        @media (min-width: 600px) {
+            #form-produzione {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="app-header">
+        <div class="logo-img"></div> <!-- Placeholder per il logo -->
+        <h1>Grafico Produzione</h1>
+    </div>
+
+    <div class="card" id="form-card">
+        <h2>Aggiungi Voce</h2>
+        <form id="form-produzione">
+            <div class="form-group"><label for="data">Data</label><input type="date" id="data" required></div>
+            <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona Categoria --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
+            <div class="form-group hidden" id="prodotto-select-wrapper">
+                <label for="prodotto-select" id="label-prodotto"></label>
+                <select id="prodotto-select"></select>
+            </div>
+            <div class="form-group hidden" id="prodotto-input-wrapper">
+                <label for="prodotto-input" id="label-prodotto-input"></label>
+                <input type="text" id="prodotto-input" placeholder="Digita il nuovo nome">
+            </div>
+            <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" placeholder="Es. 4,5" required></div>
+            <div class="form-group"><label for="unita">Unità di Misura</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
+            <input type="hidden" id="edit-id">
+            <button type="submit" id="submit-button">Aggiungi</button>
+        </form>
+    </div>
+
+    <div class="card riepilogo-box" id="box-settimanale">
+        <div class="box-header"><h3>Riepilogo Settimanale</h3><div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div></div>
+        <p class="sottotitolo" id="intervallo-settimana">...</p>
+        <div class="totali"><p>Punti Vendita (Kg): <span>0,0</span></p><p>Punti Vendita (Pz): <span>0</span></p><p>Biscotti (Kg): <span>0,0</span></p><p>Biscotti (Pz): <span>0</span></p></div>
+        <ul id="elenco-produzioni"><li>Nessuna produzione per questa settimana.</li></ul>
+        <button id="stampa-settimana" class="stampa-btn">Stampa Riepilogo</button>
+    </div>
+    <!-- Altri riepiloghi verranno aggiunti dopo -->
+</div>
+
+<!-- Lo script JavaScript verrà inserito qui sotto -->
+<script>
+// Il nostro codice JavaScript andrà qui, ma per ora è vuoto.
+</script>
+
+</body>
+</html>
