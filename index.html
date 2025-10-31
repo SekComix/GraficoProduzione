@@ -109,8 +109,211 @@
 
 <!-- Lo script JavaScript verrà inserito qui sotto -->
 <script>
-// Il nostro codice JavaScript andrà qui, ma per ora è vuoto.
-</script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Riferimenti agli elementi del DOM
+    const refs = {
+        form: document.getElementById('form-produzione'),
+        list: document.getElementById('elenco-produzioni'),
+        editId: document.getElementById('edit-id'),
+        formTitle: document.getElementById('form-title'),
+        submitBtn: document.getElementById('submit-button'),
+        date: document.getElementById('data'),
+        category: document.getElementById('categoria'),
+        quantity: document.getElementById('quantita'),
+        unit: document.getElementById('unita'),
+        productLabel: document.getElementById('label-prodotto'),
+        productSelectWrapper: document.getElementById('prodotto-select-wrapper'),
+        productInputWrapper: document.getElementById('prodotto-input-wrapper'),
+        productSelect: document.getElementById('prodotto-select'),
+        productInput: document.getElementById('prodotto-input'),
+        productInputLabel: document.getElementById('label-prodotto-input'),
+        weekSub: document.getElementById('intervallo-settimana'),
+        weekElements: { 
+            kgPv: document.querySelector('#box-settimanale [id^="tot-past-sett-kg"]'), 
+            pzPv: document.querySelector('#box-settimanale [id^="tot-past-sett-pz"]'), 
+            kgBisc: document.querySelector('#box-settimanale [id^="tot-forno-sett-kg"]'), 
+            pzBisc: document.querySelector('#box-settimanale [id^="tot-forno-sett-pz"]') 
+        }
+    };
 
+    const CATALOGO_VERSIONE = '5.0'; // Versione alta per forzare reset
+    let data = {
+        produzioni: [],
+        catalogo: {},
+    };
+
+    const catalogoDefault = {
+        "Mondadori": { categoria: "Punti Vendita", unita: "Kg" }, "Palazzolo": { categoria: "Punti Vendita", unita: "Kg" }, "Osio": { categoria: "Punti Vendita", unita: "Kg" }, "Cassano": { categoria: "Punti Vendita", unita: "Kg" }, "Carugate": { categoria: "Punti Vendita", unita: "Kg" }, "Negozio": { categoria: "Punti Vendita", unita: "Kg" }, "Ordini": { categoria: "Punti Vendita", unita: "Kg" },
+        "Esse": { categoria: "Biscotti", unita: "Kg" }, "Viennesi": { categoria: "Biscotti", unita: "Kg" }, "Pertikus": { categoria: "Biscotti", unita: "Kg" }, "Canestrelli": { categoria: "Biscotti", unita: "Kg" }, "Sablè Burro": { categoria: "Biscotti", unita: "Kg" }, "Baci Dama": { categoria: "Biscotti", unita: "Kg" }, "Piemontesi": { categoria: "Biscotti", unita: "Kg" }, "Sablè Cara": { categoria: "Biscotti", unita: "Kg" }, "Mini Bresciani": { categoria: "Biscotti", unita: "Kg" }, "Pan Turco": { categoria: "Biscotti", unita: "Kg" },
+        "Fave": { categoria: "Biscotti", unita: "Pezzi" }, "Pane dei morti": { categoria: "Biscotti", unita: "Pezzi" }
+    };
+
+    const salvaDati = () => {
+        const appData = {
+            produzioni: data.produzioni,
+            catalogo: data.catalogo,
+            catalogoVersione: CATALOGO_VERSIONE
+        };
+        localStorage.setItem('graficoProduzioneData', JSON.stringify(appData));
+    };
+
+    const caricaDati = () => {
+        const appData = JSON.parse(localStorage.getItem('graficoProduzioneData')) || {};
+        data.produzioni = appData.produzioni || [];
+        if (appData.catalogoVersione !== CATALOGO_VERSIONE) {
+            data.catalogo = { ...catalogoDefault, ...(appData.catalogo || {}) };
+        } else {
+            data.catalogo = appData.catalogo || catalogoDefault;
+        }
+        salvaDati();
+    };
+
+    const formattaNumero = (num, unita) => (unita === 'Pz') ? Math.round(num).toString() : num.toFixed(1).replace('.', ',');
+    const setDefaultDate = () => { refs.date.value = new Date().toISOString().split('T')[0]; };
+
+    const popolaProdottiSelect = (categoria) => {
+        refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option>';
+        Object.keys(data.catalogo).sort().forEach(nome => {
+            if (data.catalogo[nome].categoria === categoria) {
+                refs.productSelect.innerHTML += `<option value="${nome}">${nome}</option>`;
+            }
+        });
+        refs.productSelect.innerHTML += '<option value="---altro---">--- Altro (digita nuovo) ---</option>';
+    };
+
+    const resettaForm = () => {
+        refs.form.reset();
+        refs.editId.value = '';
+        refs.formTitle.textContent = 'Aggiungi Voce';
+        refs.submitBtn.textContent = 'Aggiungi';
+        setDefaultDate();
+        refs.productSelectWrapper.classList.add('hidden');
+        refs.productInputWrapper.classList.add('hidden');
+        refs.productLabel.textContent = 'Nome Prodotto/Punto Vendita:';
+        refs.productSelect.innerHTML = '';
+        refs.category.value = '';
+    };
+
+    const gestisciCambioCategoria = () => {
+        const categoriaSelezionata = refs.category.value;
+        refs.unit.value = 'Kg';
+        refs.productSelectWrapper.classList.add('hidden');
+        refs.productInputWrapper.classList.add('hidden');
+        if (categoriaSelezionata) {
+            refs.productLabel.textContent = (categoriaSelezionata === "Punti Vendita") ? "Punto Vendita:" : "Nome Prodotto:";
+            refs.productSelectWrapper.classList.remove('hidden');
+            popolaProdottiSelect(categoriaSelezionata);
+        }
+    };
+
+    const gestisciSelezioneProdotto = () => {
+        const prodottoSelezionato = refs.productSelect.value;
+        if (prodottoSelezionato === '---altro---') {
+            refs.productInputWrapper.classList.remove('hidden');
+            refs.productInput.value = '';
+            refs.productInput.focus();
+            refs.productInputLabel.textContent = (refs.category.value === "Punti Vendita") ? "Nuovo Punto Vendita:" : "Nuovo Prodotto:";
+        } else {
+            refs.productInputWrapper.classList.add('hidden');
+            if (data.catalogo[prodottoSelezionato]) {
+                refs.unit.value = data.catalogo[prodottoSelezionato].unita;
+            }
+        }
+    };
+
+    const gestisciSubmitForm = (event) => {
+        event.preventDefault();
+        const quantitaStringa = refs.quantity.value.replace(',', '.');
+        const quantitaNumero = parseFloat(quantitaStringa);
+        if (isNaN(quantitaNumero) || quantitaNumero <= 0) return alert('Per favore, inserisci una quantità valida.');
+        
+        let nomeProdotto = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
+        if (!nomeProdotto) return alert('Per favore, seleziona o inserisci un prodotto/punto vendita.');
+
+        const categoriaSelezionata = refs.category.value;
+        const unitaSelezionata = refs.unit.value;
+        data.catalogo[nomeProdotto] = { categoria: categoriaSelezionata, unita: unitaSelezionata };
+        
+        const idDaModificare = refs.editId.value;
+        if (idDaModificare) {
+            const index = data.produzioni.findIndex(p => p.id == idDaModificare);
+            if (index !== -1) data.produzioni[index] = { ...data.produzioni[index], data: refs.date.value, prodotto: nomeProdotto, quantita: quantitaNumero, categoria: categoriaSelezionata, unita: unitaSelezionata };
+        } else {
+            data.produzioni.unshift({ id: Date.now(), data: refs.date.value, prodotto: nomeProdotto, quantita: quantitaNumero, categoria: categoriaSelezionata, unita: unitaSelezionata });
+        }
+        data.produzioni.sort((a, b) => new Date(b.data) - new Date(a.data));
+        salvaDati();
+        aggiornaUI();
+        resettaForm();
+    };
+    const aggiornaUI = () => {
+        const oggi = new Date();
+        const anno = oggi.getFullYear();
+        const mese = oggi.getMonth();
+        const giorno = oggi.getDate();
+        
+        const primoGiornoMese = new Date(anno, mese, 1);
+        const offset = (primoGiornoMese.getDay() === 0) ? 6 : primoGiornoMese.getDay() - 1;
+        const settimanaDelMese = Math.floor((giorno + offset - 1) / 7);
+        let inizioGiornoSett = settimanaDelMese * 7 - offset + 1;
+        if (inizioGiornoSett < 1) inizioGiornoSett = 1;
+        let fineGiornoSett = inizioGiornoSett + 6;
+        const ultimoGiornoMese = new Date(anno, mese + 1, 0).getDate();
+        if (fineGiornoSett > ultimoGiornoMese) fineGiornoSett = ultimoGiornoMese;
+
+        const primoGiornoSettimana = new Date(anno, mese, inizioGiornoSett);
+        const ultimoGiornoSettimana = new Date(anno, mese, fineGiornoSett);
+
+        const produzioniSettimana = data.produzioni.filter(p => { 
+            const d = new Date(p.data); 
+            d.setHours(12,0,0,0);
+            return d >= primoGiornoSettimana && d <= ultimoGiornoSettimana; 
+        });
+
+        aggiornaListaDettaglio(produzioniSettimana);
+        aggiornaBoxRiepilogo(produzioniSettimana, refs.weekElements);
+
+        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+        refs.weekSub.textContent = `Da ${primoGiornoSettimana.toLocaleDateString('it-IT', options)} a ${ultimoGiornoSettimana.toLocaleDateString('it-IT', options)}`;
+    };
+
+    const aggiornaListaDettaglio = (dati) => {
+        refs.list.innerHTML = '';
+        if(dati.length === 0){
+            refs.list.innerHTML = '<li>Nessuna produzione per questa settimana.</li>';
+            return;
+        }
+        dati.forEach(prod => {
+            const dataFormattata = new Date(prod.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
+            refs.list.innerHTML += `<li><span>${dataFormattata} - ${prod.prodotto}: ${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</span><div><button class="modifica-btn" data-id="${prod.id}">Modifica</button><button class="cancella-btn" data-id="${prod.id}">Cancella</button></div></li>`;
+        });
+    };
+
+    const calcolaTotali = (dati) => {
+        const totali = { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 };
+        dati.forEach(p => {
+            if (p.categoria === 'Punti Vendita') {
+                if (p.unita === 'Kg') totali.puntiVenditaKg += p.quantita; else totali.puntiVenditaPz += p.quantita;
+            } else if (p.categoria === 'Biscotti') {
+                if (p.unita === 'Kg') totali.biscottiKg += p.quantita; else totali.biscottiPz += p.quantita;
+            }
+        });
+        return totali;
+    };
+
+    const aggiornaBoxRiepilogo = (dati, elementi) => {
+        const totali = calcolaTotali(dati);
+        elementi.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
+        elementi.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
+        elementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
+        elementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
+    };
+
+    // INIZIALIZZAZIONE
+    caricaDati();
+    resettaForm();
+    aggiornaUI();
+});
+</script>
 </body>
 </html>
