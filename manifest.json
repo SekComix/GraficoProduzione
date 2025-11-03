@@ -1,0 +1,21 @@
+{
+  "name": "Grafico Produzione",
+  "short_name": "GraficoProd",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#0056b3",
+  "description": "App per il monitoraggio della produzione di pasticceria e forno.",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
