@@ -42,14 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModalBtn: document.getElementById('close-modal-btn'),
     };
 
-    // 2. STATO DELL'APPLICAZIONE (CORRETTO)
+    // 2. STATO DELL'APPLICAZIONE
     const CATALOGO_VERSIONE = '5.0';
     let data = {
         produzioni: [],
         catalogo: {},
         dataRif: new Date(),
-        filtrati: { week: [], month: [], year: [] }, // Nomi in inglese
-        vistaCorrente: 'week' // Nome in inglese
+        filtrati: { week: [], month: [], year: [] },
+        vistaCorrente: 'week'
     };
 
     const catalogoDefault = {
@@ -151,7 +151,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const gestisciClickLista = (event) => {
         const target = event.target.closest('button');
         if (!target) return;
+
+        // Logica per il nuovo pulsante "Gestisci Giorno"
+        if (target.classList.contains('gestisci-giorno-btn')) {
+            const dataGiorno = target.dataset.data;
+            const contenitoreVoci = document.querySelector(`.voci-giorno[data-data="${dataGiorno}"]`);
+            if (contenitoreVoci) {
+                contenitoreVoci.classList.toggle('editing');
+            }
+            return;
+        }
+
+        // Logica esistente per i pulsanti Modifica e Cancella
         const id = target.dataset.id;
+        if (!id) return;
         const prod = data.produzioni.find(p => p.id == id);
         if (!prod) return;
         if (target.classList.contains('modifica-btn')) {
@@ -195,9 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const gestisciCambioVista = (vista) => {
-        data.vistaCorrente = vista; // es. 'week'
+        data.vistaCorrente = vista;
         Object.values(refs.viewButtons).forEach(btn => btn.classList.remove('active'));
-        refs.viewButtons[vista].classList.add('active'); // CORRETTO: Cerca 'week', non 'settimana'
+        refs.viewButtons[vista].classList.add('active');
         aggiornaListaDettaglio();
     };
 
@@ -214,8 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fineSettimana.setDate(inizioSettimana.getDate() + 6);
         fineSettimana.setHours(23, 59, 59, 999);
 
-        // CORRETTO: Salva i dati usando le chiavi in inglese
-        data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); return d >= inizioSettimana && d <= fineSettimana; });
+        data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); d.setHours(12,0,0,0); return d >= inizioSettimana && d <= fineSettimana; });
         data.filtrati.month = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; });
         data.filtrati.year = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno);
         
@@ -230,17 +242,54 @@ document.addEventListener('DOMContentLoaded', () => {
         refs.yearSub.textContent = anno;
     };
 
+    // NUOVA FUNZIONE DI VISUALIZZAZIONE A GRUPPI
     const aggiornaListaDettaglio = () => {
-        const datiDaVisualizzare = data.filtrati[data.vistaCorrente]; // Ora funziona
+        const datiDaVisualizzare = data.filtrati[data.vistaCorrente];
         refs.list.innerHTML = '';
         if (!datiDaVisualizzare || datiDaVisualizzare.length === 0) {
-            refs.list.innerHTML = '<li>Nessuna produzione per questo periodo.</li>';
+            refs.list.innerHTML = '<li class="nessuna-voce">Nessuna produzione per questo periodo.</li>';
             return;
         }
-        datiDaVisualizzare.forEach(prod => {
-            const dataFormattata = new Date(prod.data).toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: '2-digit' });
-            refs.list.innerHTML += `<li><span>${dataFormattata} - ${prod.prodotto}: ${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</span><div><button class="modifica-btn" data-id="${prod.id}">Modifica</button><button class="cancella-btn" data-id="${prod.id}">Cancella</button></div></li>`;
-        });
+
+        // Raggruppa le produzioni per data
+        const produzioniPerGiorno = datiDaVisualizzare.reduce((acc, prod) => {
+            const giorno = prod.data;
+            if (!acc[giorno]) {
+                acc[giorno] = [];
+            }
+            acc[giorno].push(prod);
+            return acc;
+        }, {});
+
+        // Crea l'HTML per ogni gruppo
+        for (const giorno in produzioniPerGiorno) {
+            const dataFormattata = new Date(giorno).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long' });
+            
+            let vociHtml = '';
+            produzioniPerGiorno[giorno].forEach(prod => {
+                vociHtml += `
+                    <div class="voce-produzione">
+                        <span>${prod.prodotto}: <b>${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</b></span>
+                        <div class="bottoni-voce">
+                            <button class="modifica-btn" data-id="${prod.id}">Modifica</button>
+                            <button class="cancella-btn" data-id="${prod.id}">Cancella</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            refs.list.innerHTML += `
+                <li class="gruppo-giorno">
+                    <div class="header-giorno">
+                        <h4>${dataFormattata}</h4>
+                        <button class="gestisci-giorno-btn" data-data="${giorno}">Gestisci Giorno</button>
+                    </div>
+                    <div class="voci-giorno" data-data="${giorno}">
+                        ${vociHtml}
+                    </div>
+                </li>
+            `;
+        }
     };
 
     const aggiornaBoxRiepilogo = (dati, elementi) => {
@@ -252,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const calcolaTotali = (dati) => {
-        if (!dati) return { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }; // Sicurezza
+        if (!dati) return { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 };
         return dati.reduce((acc, p) => {
             if (p.categoria === 'Punti Vendita') {
                 if (p.unita === 'Kg') acc.puntiVenditaKg += p.quantita; else acc.puntiVenditaPz += p.quantita;
@@ -266,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const generaPdf = (tipo, nomeVisualizzato) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        const dati = data.filtrati[tipo]; // CORRETTO: Cerca 'week', non 'settimanale'
+        const dati = data.filtrati[tipo];
 
         doc.setFontSize(18);
         doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20);
@@ -330,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // COLLEGAMENTO DEGLI EVENTI (CORRETTO)
+    // COLLEGAMENTO DEGLI EVENTI
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
