@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM
+    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM (AGGIORNATI)
     const refs = {
         form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
@@ -16,22 +16,17 @@ document.addEventListener('DOMContentLoaded', () => {
         productSelect: document.getElementById('prodotto-select'),
         productInput: document.getElementById('prodotto-input'),
         productInputLabel: document.getElementById('label-prodotto-input'),
-        weekSub: document.getElementById('intervallo-settimana'),
-        monthSub: document.getElementById('mese-corrente'),
-        yearSub: document.getElementById('anno-corrente'),
-        weekElements: { kgPv: document.getElementById('tot-pv-sett-kg'), pzPv: document.getElementById('tot-pv-sett-pz'), kgBisc: document.getElementById('tot-bisc-sett-kg'), pzBisc: document.getElementById('tot-bisc-sett-pz') },
-        monthElements: { kgPv: document.getElementById('tot-pv-mese-kg'), pzPv: document.getElementById('tot-pv-mese-pz'), kgBisc: document.getElementById('tot-bisc-mese-kg'), pzBisc: document.getElementById('tot-bisc-mese-pz') },
-        yearElements: { kgPv: document.getElementById('tot-pv-anno-kg'), pzPv: document.getElementById('tot-pv-anno-pz'), kgBisc: document.getElementById('tot-bisc-anno-kg'), pzBisc: document.getElementById('tot-bisc-anno-pz') },
-        navButtons: {
-            prevWeek: document.getElementById('prev-week'), todayWeek: document.getElementById('today-week'), nextWeek: document.getElementById('next-week'),
-            prevMonth: document.getElementById('prev-month'), todayMonth: document.getElementById('today-month'), nextMonth: document.getElementById('next-month'),
-            prevYear: document.getElementById('prev-year'), todayYear: document.getElementById('today-year'), nextYear: document.getElementById('next-year')
+        // Riferimenti al riquadro dinamico
+        riepilogoTitolo: document.getElementById('riepilogo-titolo'),
+        riepilogoSottotitolo: document.getElementById('riepilogo-sottotitolo'),
+        riepilogoElementi: { 
+            kgPv: document.getElementById('tot-pv-kg'), pzPv: document.getElementById('tot-pv-pz'), 
+            kgBisc: document.getElementById('tot-bisc-kg'), pzBisc: document.getElementById('tot-bisc-pz') 
         },
-        printButtons: {
-            week: document.getElementById('stampa-settimana'),
-            month: document.getElementById('stampa-mese'),
-            year: document.getElementById('stampa-anno')
-        },
+        navPrev: document.getElementById('nav-prev'),
+        navNext: document.getElementById('nav-next'),
+        navToday: document.getElementById('nav-today'),
+        stampaBtn: document.getElementById('stampa-riepilogo'),
         viewButtons: {
             week: document.getElementById('view-week-btn'),
             month: document.getElementById('view-month-btn'),
@@ -58,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Fave": { categoria: "Biscotti", unita: "Pezzi" }, "Pane dei morti": { categoria: "Biscotti", unita: "Pezzi" }
     };
 
+    // --- FUNZIONI DI GESTIONE DATI (invariate) ---
     const salvaDati = () => {
         const appData = { produzioni: data.produzioni, catalogo: data.catalogo, catalogoVersione: CATALOGO_VERSIONE };
         localStorage.setItem('graficoProduzioneData', JSON.stringify(appData));
@@ -77,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const formattaNumero = (num, unita) => (unita === 'Pezzi') ? Math.round(num).toString() : num.toFixed(1).replace('.', ',');
     const setDefaultDate = () => { refs.date.value = new Date().toISOString().split('T')[0]; };
 
+    // --- FUNZIONI DI GESTIONE DEL FORM (invariate) ---
     const popolaProdottiSelect = (categoria) => {
         refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option>';
         Object.keys(data.catalogo).sort().forEach(nome => {
@@ -115,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
             refs.productInputWrapper.classList.remove('hidden');
             refs.productInput.value = '';
             refs.productInput.focus();
-            refs.productInputLabel.textContent = (refs.category.value === "Punti Vendita") ? "Nuovo Punto Vendita:" : "Nuovo Prodotto:";
         } else {
             refs.productInputWrapper.classList.add('hidden');
             if (data.catalogo[prodottoSelezionato]) {
@@ -148,21 +144,22 @@ document.addEventListener('DOMContentLoaded', () => {
         resettaForm();
     };
 
+    // --- NUOVA LOGICA DI VISUALIZZAZIONE E INTERAZIONE ---
+    
     const gestisciClickLista = (event) => {
         const target = event.target.closest('button');
         if (!target) return;
 
-        // Logica per il nuovo pulsante "Gestisci Giorno"
         if (target.classList.contains('gestisci-giorno-btn')) {
             const dataGiorno = target.dataset.data;
             const contenitoreVoci = document.querySelector(`.voci-giorno[data-data="${dataGiorno}"]`);
             if (contenitoreVoci) {
                 contenitoreVoci.classList.toggle('editing');
+                target.classList.toggle('active');
             }
             return;
         }
 
-        // Logica esistente per i pulsanti Modifica e Cancella
         const id = target.dataset.id;
         if (!id) return;
         const prod = data.produzioni.find(p => p.id == id);
@@ -195,15 +192,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const gestisciNavigazione = (event) => {
-        const id = event.target.id;
-        if (id.includes('today')) data.dataRif = new Date();
-        if (id.includes('prev-week')) data.dataRif.setDate(data.dataRif.getDate() - 7);
-        if (id.includes('next-week')) data.dataRif.setDate(data.dataRif.getDate() + 7);
-        if (id.includes('prev-month')) data.dataRif.setMonth(data.dataRif.getMonth() - 1);
-        if (id.includes('next-month')) data.dataRif.setMonth(data.dataRif.getMonth() + 1);
-        if (id.includes('prev-year')) data.dataRif.setFullYear(data.dataRif.getFullYear() - 1);
-        if (id.includes('next-year')) data.dataRif.setFullYear(data.dataRif.getFullYear() + 1);
+    const gestisciNavigazione = (azione) => {
+        if (azione === 'today') {
+            data.dataRif = new Date();
+        } else {
+            const step = (azione === 'prev') ? -1 : 1;
+            if (data.vistaCorrente === 'week') data.dataRif.setDate(data.dataRif.getDate() + (7 * step));
+            if (data.vistaCorrente === 'month') data.dataRif.setMonth(data.dataRif.getMonth() + step);
+            if (data.vistaCorrente === 'year') data.dataRif.setFullYear(data.dataRif.getFullYear() + step);
+        }
         aggiornaUI();
     };
 
@@ -211,38 +208,52 @@ document.addEventListener('DOMContentLoaded', () => {
         data.vistaCorrente = vista;
         Object.values(refs.viewButtons).forEach(btn => btn.classList.remove('active'));
         refs.viewButtons[vista].classList.add('active');
-        aggiornaListaDettaglio();
+        aggiornaUI();
     };
 
     const aggiornaUI = () => {
+        // 1. Filtra i dati per tutti i periodi
         const anno = data.dataRif.getFullYear();
         const mese = data.dataRif.getMonth();
-        const oggi = data.dataRif.getDate();
-        
         const inizioSettimana = new Date(data.dataRif);
-        inizioSettimana.setDate(oggi - (data.dataRif.getDay() === 0 ? 6 : data.dataRif.getDay() - 1));
+        inizioSettimana.setDate(inizioSettimana.getDate() - (data.dataRif.getDay() === 0 ? 6 : data.dataRif.getDay() - 1));
         inizioSettimana.setHours(0, 0, 0, 0);
-
         const fineSettimana = new Date(inizioSettimana);
         fineSettimana.setDate(inizioSettimana.getDate() + 6);
         fineSettimana.setHours(23, 59, 59, 999);
 
-        data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); d.setHours(12,0,0,0); return d >= inizioSettimana && d <= fineSettimana; });
+        data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); d.setHours(12, 0, 0, 0); return d >= inizioSettimana && d <= fineSettimana; });
         data.filtrati.month = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; });
         data.filtrati.year = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno);
-        
+
+        // 2. Aggiorna il riquadro di riepilogo dinamico
+        const vista = data.vistaCorrente;
+        const datiVistaCorrente = data.filtrati[vista];
+        let titolo = '', sottotitolo = '';
+
+        if (vista === 'week') {
+            titolo = 'Riepilogo Settimanale';
+            sottotitolo = `Da ${inizioSettimana.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })} a ${fineSettimana.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}`;
+        } else if (vista === 'month') {
+            titolo = 'Riepilogo Mensile';
+            sottotitolo = new Date(anno, mese).toLocaleString('it-IT', { month: 'long', year: 'numeric' }).toUpperCase();
+        } else if (vista === 'year') {
+            titolo = 'Riepilogo Annuale';
+            sottotitolo = anno.toString();
+        }
+        refs.riepilogoTitolo.textContent = titolo;
+        refs.riepilogoSottotitolo.textContent = sottotitolo;
+
+        const totali = calcolaTotali(datiVistaCorrente);
+        refs.riepilogoElementi.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
+        refs.riepilogoElementi.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
+        refs.riepilogoElementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
+        refs.riepilogoElementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
+
+        // 3. Aggiorna la lista dettagliata
         aggiornaListaDettaglio();
-        aggiornaBoxRiepilogo(data.filtrati.week, refs.weekElements);
-        aggiornaBoxRiepilogo(data.filtrati.month, refs.monthElements);
-        aggiornaBoxRiepilogo(data.filtrati.year, refs.yearElements);
-
-        const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
-        refs.weekSub.textContent = `Da ${inizioSettimana.toLocaleDateString('it-IT', options)} a ${fineSettimana.toLocaleDateString('it-IT', options)}`;
-        refs.monthSub.textContent = new Date(anno, mese).toLocaleString('it-IT', { month: 'long', year: 'numeric' }).toUpperCase();
-        refs.yearSub.textContent = anno;
     };
-
-    // NUOVA FUNZIONE DI VISUALIZZAZIONE A GRUPPI
+    
     const aggiornaListaDettaglio = () => {
         const datiDaVisualizzare = data.filtrati[data.vistaCorrente];
         refs.list.innerHTML = '';
@@ -251,20 +262,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Raggruppa le produzioni per data
         const produzioniPerGiorno = datiDaVisualizzare.reduce((acc, prod) => {
             const giorno = prod.data;
-            if (!acc[giorno]) {
-                acc[giorno] = [];
-            }
+            if (!acc[giorno]) acc[giorno] = [];
             acc[giorno].push(prod);
             return acc;
         }, {});
 
-        // Crea l'HTML per ogni gruppo
         for (const giorno in produzioniPerGiorno) {
             const dataFormattata = new Date(giorno).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long' });
-            
             let vociHtml = '';
             produzioniPerGiorno[giorno].forEach(prod => {
                 vociHtml += `
@@ -282,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li class="gruppo-giorno">
                     <div class="header-giorno">
                         <h4>${dataFormattata}</h4>
-                        <button class="gestisci-giorno-btn" data-data="${giorno}">Gestisci Giorno</button>
+                        <button class="gestisci-giorno-btn" data-data="${giorno}">Gestisci Voci</button>
                     </div>
                     <div class="voci-giorno" data-data="${giorno}">
                         ${vociHtml}
@@ -290,14 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </li>
             `;
         }
-    };
-
-    const aggiornaBoxRiepilogo = (dati, elementi) => {
-        const totali = calcolaTotali(dati);
-        elementi.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
-        elementi.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
-        elementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
-        elementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
     };
     
     const calcolaTotali = (dati) => {
@@ -320,54 +318,27 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.setFontSize(18);
         doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20);
         doc.setFontSize(12);
-
-        let sottotitolo = '';
-        if (tipo === 'week') sottotitolo = refs.weekSub.textContent;
-        else if (tipo === 'month') sottotitolo = refs.monthSub.textContent;
-        else if (tipo === 'year') sottotitolo = refs.yearSub.textContent;
-        doc.text(sottotitolo, 14, 27);
+        doc.text(refs.riepilogoSottotitolo.textContent, 14, 27);
 
         const totali = calcolaTotali(dati);
-        const corpoTabellaTotali = [
-            ['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],
-            ['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')],
-            ['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],
-            ['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')],
-        ];
-
-        doc.autoTable({
-            startY: 35,
-            head: [['Categoria', 'Totale']],
-            body: corpoTabellaTotali,
-            theme: 'striped',
-            headStyles: { fillColor: [0, 86, 179] }
-        });
+        const corpoTabellaTotali = [['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')],['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')]];
+        doc.autoTable({ startY: 35, head: [['Categoria', 'Totale']], body: corpoTabellaTotali, theme: 'striped', headStyles: { fillColor: [0, 86, 179] } });
 
         if (dati && dati.length > 0) {
-            const corpoTabellaDettaglio = dati.map(p => [
-                new Date(p.data).toLocaleDateString('it-IT'),
-                p.prodotto,
-                `${formattaNumero(p.quantita, p.unita)} ${p.unita}`
-            ]);
-            doc.autoTable({
-                head: [['Data', 'Prodotto/Punto Vendita', 'Quantità']],
-                body: corpoTabellaDettaglio,
-                theme: 'grid'
-            });
+            const corpoTabellaDettaglio = dati.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
+            doc.autoTable({ head: [['Data', 'Prodotto/Punto Vendita', 'Quantità']], body: corpoTabellaDettaglio, theme: 'grid' });
         }
-
         const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeFile);
     };
 
-    // GESTIONE INSTALLAZIONE PWA
+    // --- GESTIONE PWA (invariata) ---
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
         if (refs.installBtn) refs.installBtn.style.display = 'block';
     });
-
     const gestisciInstallazione = async () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
@@ -379,22 +350,26 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // COLLEGAMENTO DEGLI EVENTI
+    // --- COLLEGAMENTO DEGLI EVENTI (AGGIORNATO) ---
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
     refs.productSelect.addEventListener('change', gestisciSelezioneProdotto);
-    Object.values(refs.navButtons).forEach(btn => btn.addEventListener('click', gestisciNavigazione));
-    refs.printButtons.week.addEventListener('click', () => generaPdf('week', 'Settimanale'));
-    refs.printButtons.month.addEventListener('click', () => generaPdf('month', 'Mensile'));
-    refs.printButtons.year.addEventListener('click', () => generaPdf('year', 'Annuale'));
+    refs.navPrev.addEventListener('click', () => gestisciNavigazione('prev'));
+    refs.navNext.addEventListener('click', () => gestisciNavigazione('next'));
+    refs.navToday.addEventListener('click', () => gestisciNavigazione('today'));
+    refs.stampaBtn.addEventListener('click', () => {
+        const vista = data.vistaCorrente;
+        const nomeVista = refs.viewButtons[vista].textContent;
+        generaPdf(vista, nomeVista);
+    });
     refs.viewButtons.week.addEventListener('click', () => gestisciCambioVista('week'));
     refs.viewButtons.month.addEventListener('click', () => gestisciCambioVista('month'));
     refs.viewButtons.year.addEventListener('click', () => gestisciCambioVista('year'));
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
 
-    // AVVIO APPLICAZIONE
+    // --- AVVIO APPLICAZIONE ---
     caricaDati();
     resettaForm();
     aggiornaUI();
