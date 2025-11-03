@@ -103,3 +103,78 @@ button:active { transform: scale(0.98); }
     color: var(--primary-color);
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+/* Stili per la nuova lista raggruppata per giorno */
+#elenco-produzioni {
+    border-top: 1px solid var(--border-color);
+    padding-top: 15px;
+}
+
+#elenco-produzioni li.gruppo-giorno {
+    background-color: #fff;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    margin-bottom: 0;
+    display: block;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#elenco-produzioni li.nessuna-voce {
+    background: none;
+    border: none;
+    text-align: center;
+    color: var(--secondary-color);
+    padding: 20px;
+}
+
+.header-giorno {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: var(--light-gray);
+}
+
+.header-giorno h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--primary-color);
+}
+
+.gestisci-giorno-btn {
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 5px 12px;
+    font-size: 14px;
+}
+
+.voci-giorno {
+    padding: 0 15px 15px 15px;
+}
+
+.voce-produzione {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.voci-giorno .voce-produzione:last-child {
+    border-bottom: none;
+}
+
+.voce-produzione span {
+    flex-grow: 1;
+}
+
+/* Logica per mostrare/nascondere i pulsanti */
+.bottoni-voce {
+    display: none; /* Nascosti di default */
+    gap: 8px;
+    margin-left: 10px;
+}
+
+.voci-giorno.editing .bottoni-voce {
+    display: flex; /* Visibili quando il genitore ha la classe 'editing' */
+}
