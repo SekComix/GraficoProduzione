@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grafico-produzione-cache-v2';
+const CACHE_NAME = 'grafico-produzione-cache-v3'; // Ho incrementato la versione a v3
 const urlsToCache = [
   './',
   './index.html',
@@ -15,7 +15,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache aperta e file salvati');
+        console.log('Cache v3 aperta e file salvati');
         return cache.addAll(urlsToCache);
       })
   );
@@ -24,7 +24,6 @@ self.addEventListener('install', event => {
 // 2. Intercettazione delle richieste di rete
 self.addEventListener('fetch', event => {
   event.respondWith(
-    // Cerca prima nella cache
     caches.match(event.request)
       .then(response => {
         // Se la risorsa è in cache, la restituisce
@@ -45,7 +44,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // Cancella tutte le cache che non sono quella attuale
+            // Cancella tutte le cache che non sono quella attuale (es. v1, v2)
             return caches.delete(cacheName);
           }
         })
