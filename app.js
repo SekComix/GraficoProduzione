@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- FUNZIONE MODIFICATA ---
     const gestisciSubmitForm = (event) => {
         event.preventDefault();
         const quantitaStringa = refs.quantity.value.replace(',', '.');
@@ -128,7 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoriaSelezionata = refs.category.value;
         const unitaSelezionata = refs.unit.value;
         data.catalogo[nomeProdotto] = { categoria: categoriaSelezionata, unita: unitaSelezionata };
+        
+        const isEditing = !!refs.editId.value; // Controlla se è una modifica PRIMA di salvare
         const idDaModificare = refs.editId.value;
+
         if (idDaModificare) {
             const index = data.produzioni.findIndex(p => p.id == idDaModificare);
             if (index !== -1) data.produzioni[index] = { ...data.produzioni[index], data: refs.date.value, prodotto: nomeProdotto, quantita: quantitaNumero, categoria: categoriaSelezionata, unita: unitaSelezionata };
@@ -138,25 +140,17 @@ document.addEventListener('DOMContentLoaded', () => {
         data.produzioni.sort((a, b) => new Date(b.data) - new Date(a.data));
         salvaDati();
         data.dataRif = new Date(refs.date.value);
+        
         aggiornaUI();
         
-        // NUOVA PARTE: Feedback visivo
+        // NUOVA PARTE: Feedback visivo specifico
         refs.submitBtn.classList.add('success');
-        refs.submitBtn.textContent = 'Salvato!';
-
-        const testoOriginale = refs.editId.value ? 'Salva Modifiche' : 'Aggiungi';
+        refs.submitBtn.textContent = isEditing ? 'Modificato!' : 'Aggiunto!';
         
-        resettaForm(); // Resetta il form subito, ma l'animazione continua
-
         setTimeout(() => {
             refs.submitBtn.classList.remove('success');
-            // Ripristina il testo corretto in base al contesto (Aggiungi o Salva Modifiche)
-            // Se nel frattempo si è cliccato modifica, il titolo del form sarà "Modifica Voce"
-            if(refs.formTitle.textContent === 'Modifica Voce') {
-                 refs.submitBtn.textContent = 'Salva Modifiche';
-            } else {
-                 refs.submitBtn.textContent = 'Aggiungi';
-            }
+            // Dopo l'animazione, resetta completamente il form
+            resettaForm();
         }, 1500); // 1.5 secondi
     };
 
