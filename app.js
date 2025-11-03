@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM (AGGIORNATI)
+    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM
     const refs = {
         form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
         productSelect: document.getElementById('prodotto-select'),
         productInput: document.getElementById('prodotto-input'),
         productInputLabel: document.getElementById('label-prodotto-input'),
-        // Riferimenti al riquadro dinamico
         riepilogoTitolo: document.getElementById('riepilogo-titolo'),
         riepilogoSottotitolo: document.getElementById('riepilogo-sottotitolo'),
         riepilogoElementi: { 
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
         "Fave": { categoria: "Biscotti", unita: "Pezzi" }, "Pane dei morti": { categoria: "Biscotti", unita: "Pezzi" }
     };
 
-    // --- FUNZIONI DI GESTIONE DATI (invariate) ---
     const salvaDati = () => {
         const appData = { produzioni: data.produzioni, catalogo: data.catalogo, catalogoVersione: CATALOGO_VERSIONE };
         localStorage.setItem('graficoProduzioneData', JSON.stringify(appData));
@@ -73,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const formattaNumero = (num, unita) => (unita === 'Pezzi') ? Math.round(num).toString() : num.toFixed(1).replace('.', ',');
     const setDefaultDate = () => { refs.date.value = new Date().toISOString().split('T')[0]; };
 
-    // --- FUNZIONI DI GESTIONE DEL FORM (invariate) ---
     const popolaProdottiSelect = (categoria) => {
         refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option>';
         Object.keys(data.catalogo).sort().forEach(nome => {
@@ -144,8 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
         resettaForm();
     };
 
-    // --- NUOVA LOGICA DI VISUALIZZAZIONE E INTERAZIONE ---
-    
     const gestisciClickLista = (event) => {
         const target = event.target.closest('button');
         if (!target) return;
@@ -212,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const aggiornaUI = () => {
-        // 1. Filtra i dati per tutti i periodi
         const anno = data.dataRif.getFullYear();
         const mese = data.dataRif.getMonth();
         const inizioSettimana = new Date(data.dataRif);
@@ -226,7 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
         data.filtrati.month = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; });
         data.filtrati.year = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno);
 
-        // 2. Aggiorna il riquadro di riepilogo dinamico
         const vista = data.vistaCorrente;
         const datiVistaCorrente = data.filtrati[vista];
         let titolo = '', sottotitolo = '';
@@ -250,7 +243,6 @@ document.addEventListener('DOMContentLoaded', () => {
         refs.riepilogoElementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
         refs.riepilogoElementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
 
-        // 3. Aggiorna la lista dettagliata
         aggiornaListaDettaglio();
     };
     
@@ -310,29 +302,81 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 });
     };
     
+    // --- FUNZIONE PDF AGGIORNATA ---
     const generaPdf = (tipo, nomeVisualizzato) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
         const dati = data.filtrati[tipo];
 
+        // Intestazione principale
         doc.setFontSize(18);
         doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20);
         doc.setFontSize(12);
         doc.text(refs.riepilogoSottotitolo.textContent, 14, 27);
 
+        // Tabella 1: Totali
         const totali = calcolaTotali(dati);
-        const corpoTabellaTotali = [['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')],['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')]];
-        doc.autoTable({ startY: 35, head: [['Categoria', 'Totale']], body: corpoTabellaTotali, theme: 'striped', headStyles: { fillColor: [0, 86, 179] } });
+        const corpoTabellaTotali = [
+            ['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],
+            ['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')],
+            ['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],
+            ['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')]
+        ];
+        doc.autoTable({
+            startY: 35,
+            head: [['Riepilogo Categorie', 'Totale']],
+            body: corpoTabellaTotali,
+            theme: 'striped',
+            headStyles: { fillColor: [0, 86, 179] }
+        });
 
-        if (dati && dati.length > 0) {
-            const corpoTabellaDettaglio = dati.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
-            doc.autoTable({ head: [['Data', 'Prodotto/Punto Vendita', 'Quantità']], body: corpoTabellaDettaglio, theme: 'grid' });
+        // Suddivisione dati per le tabelle di dettaglio
+        const datiPuntiVendita = dati.filter(p => p.categoria === 'Punti Vendita');
+        const datiBiscotti = dati.filter(p => p.categoria === 'Biscotti');
+
+        // Tabella 2: Dettaglio Punti Vendita
+        if (datiPuntiVendita.length > 0) {
+            const corpoTabellaPv = datiPuntiVendita.map(p => [
+                new Date(p.data).toLocaleDateString('it-IT'),
+                p.prodotto,
+                `${formattaNumero(p.quantita, p.unita)} ${p.unita}`
+            ]);
+            doc.autoTable({
+                head: [['Data', 'Punto Vendita', 'Quantità']],
+                body: corpoTabellaPv,
+                theme: 'grid',
+                headStyles: { fillColor: [40, 167, 69] }, // Verde per i punti vendita
+                didDrawPage: (data) => { // Aggiunge il titolo prima della tabella
+                    doc.setFontSize(14);
+                    doc.text('Dettaglio Punti Vendita', 14, data.cursor.y - 5);
+                }
+            });
         }
+
+        // Tabella 3: Dettaglio Biscotti
+        if (datiBiscotti.length > 0) {
+            const corpoTabellaBiscotti = datiBiscotti.map(p => [
+                new Date(p.data).toLocaleDateString('it-IT'),
+                p.prodotto,
+                `${formattaNumero(p.quantita, p.unita)} ${p.unita}`
+            ]);
+            doc.autoTable({
+                head: [['Data', 'Biscotto', 'Quantità']],
+                body: corpoTabellaBiscotti,
+                theme: 'grid',
+                headStyles: { fillColor: [255, 193, 7] }, // Giallo/arancio per i biscotti
+                didDrawPage: (data) => { // Aggiunge il titolo prima della tabella
+                    doc.setFontSize(14);
+                    doc.text('Dettaglio Biscotti', 14, data.cursor.y - 5);
+                }
+            });
+        }
+
         const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeFile);
     };
 
-    // --- GESTIONE PWA (invariata) ---
+    // --- GESTIONE PWA
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -350,7 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- COLLEGAMENTO DEGLI EVENTI (AGGIORNATO) ---
+    // --- COLLEGAMENTO DEGLI EVENTI
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
@@ -369,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
 
-    // --- AVVIO APPLICAZIONE ---
+    // --- AVVIO APPLICAZIONE
     caricaDati();
     resettaForm();
     aggiornaUI();
