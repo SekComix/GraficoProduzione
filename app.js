@@ -302,19 +302,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 });
     };
     
-    // --- FUNZIONE PDF AGGIORNATA ---
     const generaPdf = (tipo, nomeVisualizzato) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
         const dati = data.filtrati[tipo];
 
-        // Intestazione principale
         doc.setFontSize(18);
         doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20);
         doc.setFontSize(12);
         doc.text(refs.riepilogoSottotitolo.textContent, 14, 27);
 
-        // Tabella 1: Totali
         const totali = calcolaTotali(dati);
         const corpoTabellaTotali = [
             ['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],
@@ -330,45 +327,30 @@ document.addEventListener('DOMContentLoaded', () => {
             headStyles: { fillColor: [0, 86, 179] }
         });
 
-        // Suddivisione dati per le tabelle di dettaglio
         const datiPuntiVendita = dati.filter(p => p.categoria === 'Punti Vendita');
         const datiBiscotti = dati.filter(p => p.categoria === 'Biscotti');
 
-        // Tabella 2: Dettaglio Punti Vendita
         if (datiPuntiVendita.length > 0) {
-            const corpoTabellaPv = datiPuntiVendita.map(p => [
-                new Date(p.data).toLocaleDateString('it-IT'),
-                p.prodotto,
-                `${formattaNumero(p.quantita, p.unita)} ${p.unita}`
-            ]);
+            const corpoTabellaPv = datiPuntiVendita.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
             doc.autoTable({
-                head: [['Data', 'Punto Vendita', 'Quantità']],
+                // MODIFICA QUI: L'intestazione della colonna ora è il titolo.
+                head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']],
                 body: corpoTabellaPv,
                 theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] }, // Verde per i punti vendita
-                didDrawPage: (data) => { // Aggiunge il titolo prima della tabella
-                    doc.setFontSize(14);
-                    doc.text('Dettaglio Punti Vendita', 14, data.cursor.y - 5);
-                }
+                headStyles: { fillColor: [40, 167, 69] }
+                // RIMOSSA la funzione didDrawPage che causava la sovrapposizione
             });
         }
 
-        // Tabella 3: Dettaglio Biscotti
         if (datiBiscotti.length > 0) {
-            const corpoTabellaBiscotti = datiBiscotti.map(p => [
-                new Date(p.data).toLocaleDateString('it-IT'),
-                p.prodotto,
-                `${formattaNumero(p.quantita, p.unita)} ${p.unita}`
-            ]);
+            const corpoTabellaBiscotti = datiBiscotti.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
             doc.autoTable({
-                head: [['Data', 'Biscotto', 'Quantità']],
+                // MODIFICA QUI: L'intestazione della colonna ora è il titolo.
+                head: [['Data', 'Dettaglio Prodotti', 'Quantità']],
                 body: corpoTabellaBiscotti,
                 theme: 'grid',
-                headStyles: { fillColor: [255, 193, 7] }, // Giallo/arancio per i biscotti
-                didDrawPage: (data) => { // Aggiunge il titolo prima della tabella
-                    doc.setFontSize(14);
-                    doc.text('Dettaglio Biscotti', 14, data.cursor.y - 5);
-                }
+                headStyles: { fillColor: [255, 193, 7] }
+                 // RIMOSSA la funzione didDrawPage che causava la sovrapposizione
             });
         }
 
@@ -376,7 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(nomeFile);
     };
 
-    // --- GESTIONE PWA
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -394,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- COLLEGAMENTO DEGLI EVENTI
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
@@ -413,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
 
-    // --- AVVIO APPLICAZIONE
     caricaDati();
     resettaForm();
     aggiornaUI();
