@@ -431,3 +431,18 @@ button:active {
     border-radius: 6px;
     background-color: var(--light-gray);
 }
+/* Stili per il nuovo pulsante Esporta CSV e layout a 3 colonne */
+.action-buttons {
+    grid-template-columns: 1fr 1fr 1fr; /* Adatta il layout a 3 pulsanti */
+}
+
+.esporta-btn {
+    background-color: var(--warning-color);
+    color: #212529; /* Un nero/grigio scuro per una buona leggibilità */
+}
+
+/* Aggiustamento opzionale per far stare meglio il testo sui telefoni */
+.stampa-btn, .analizza-btn, .esporta-btn {
+    font-size: 14px;
+    padding: 12px 5px;
+}
