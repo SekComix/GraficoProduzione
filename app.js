@@ -42,14 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModalBtn: document.getElementById('close-modal-btn'),
     };
 
-    // 2. STATO DELL'APPLICAZIONE
+    // 2. STATO DELL'APPLICAZIONE (CORRETTO)
     const CATALOGO_VERSIONE = '5.0';
     let data = {
         produzioni: [],
         catalogo: {},
         dataRif: new Date(),
-        filtrati: { settimana: [], mese: [], anno: [] },
-        vistaCorrente: 'settimana' // 'settimana', 'mese', o 'anno'
+        filtrati: { week: [], month: [], year: [] }, // Nomi in inglese
+        vistaCorrente: 'week' // Nome in inglese
     };
 
     const catalogoDefault = {
@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setDefaultDate();
         refs.productSelectWrapper.classList.add('hidden');
         refs.productInputWrapper.classList.add('hidden');
-        refs.productLabel.textContent = 'Nome Prodotto/Punto Vendita:';
         refs.productSelect.innerHTML = '';
         refs.category.value = '';
     };
@@ -103,8 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const gestisciCambioCategoria = () => {
         const categoriaSelezionata = refs.category.value;
         refs.unit.value = 'Kg';
-        refs.productSelectWrapper.classList.add('hidden');
-        refs.productInputWrapper.classList.add('hidden');
         if (categoriaSelezionata) {
             refs.productLabel.textContent = (categoriaSelezionata === "Punti Vendita") ? "Punto Vendita:" : "Nome Prodotto:";
             refs.productSelectWrapper.classList.remove('hidden');
@@ -155,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target.closest('button');
         if (!target) return;
         const id = target.dataset.id;
-        if (!id) return;
         const prod = data.produzioni.find(p => p.id == id);
         if (!prod) return;
         if (target.classList.contains('modifica-btn')) {
@@ -199,9 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const gestisciCambioVista = (vista) => {
-        data.vistaCorrente = vista;
+        data.vistaCorrente = vista; // es. 'week'
         Object.values(refs.viewButtons).forEach(btn => btn.classList.remove('active'));
-        refs.viewButtons[vista].classList.add('active');
+        refs.viewButtons[vista].classList.add('active'); // CORRETTO: Cerca 'week', non 'settimana'
         aggiornaListaDettaglio();
     };
 
@@ -218,14 +214,15 @@ document.addEventListener('DOMContentLoaded', () => {
         fineSettimana.setDate(inizioSettimana.getDate() + 6);
         fineSettimana.setHours(23, 59, 59, 999);
 
-        data.filtrati.settimana = data.produzioni.filter(p => { const d = new Date(p.data); return d >= inizioSettimana && d <= fineSettimana; });
-        data.filtrati.mese = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; });
-        data.filtrati.anno = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno);
+        // CORRETTO: Salva i dati usando le chiavi in inglese
+        data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); return d >= inizioSettimana && d <= fineSettimana; });
+        data.filtrati.month = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; });
+        data.filtrati.year = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno);
         
         aggiornaListaDettaglio();
-        aggiornaBoxRiepilogo(data.filtrati.settimana, refs.weekElements);
-        aggiornaBoxRiepilogo(data.filtrati.mese, refs.monthElements);
-        aggiornaBoxRiepilogo(data.filtrati.anno, refs.yearElements);
+        aggiornaBoxRiepilogo(data.filtrati.week, refs.weekElements);
+        aggiornaBoxRiepilogo(data.filtrati.month, refs.monthElements);
+        aggiornaBoxRiepilogo(data.filtrati.year, refs.yearElements);
 
         const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
         refs.weekSub.textContent = `Da ${inizioSettimana.toLocaleDateString('it-IT', options)} a ${fineSettimana.toLocaleDateString('it-IT', options)}`;
@@ -234,9 +231,9 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const aggiornaListaDettaglio = () => {
-        const datiDaVisualizzare = data.filtrati[data.vistaCorrente];
+        const datiDaVisualizzare = data.filtrati[data.vistaCorrente]; // Ora funziona
         refs.list.innerHTML = '';
-        if (datiDaVisualizzare.length === 0) {
+        if (!datiDaVisualizzare || datiDaVisualizzare.length === 0) {
             refs.list.innerHTML = '<li>Nessuna produzione per questo periodo.</li>';
             return;
         }
@@ -255,6 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     const calcolaTotali = (dati) => {
+        if (!dati) return { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }; // Sicurezza
         return dati.reduce((acc, p) => {
             if (p.categoria === 'Punti Vendita') {
                 if (p.unita === 'Kg') acc.puntiVenditaKg += p.quantita; else acc.puntiVenditaPz += p.quantita;
@@ -265,20 +263,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 });
     };
     
-    const generaPdf = (tipo) => {
+    const generaPdf = (tipo, nomeVisualizzato) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
-        const dati = data.filtrati[tipo.toLowerCase()];
-        let titolo = `Riepilogo Produzione ${tipo}`;
-        let sottotitolo = '';
-
-        if (tipo === 'Settimanale') sottotitolo = refs.weekSub.textContent;
-        else if (tipo === 'Mensile') sottotitolo = refs.monthSub.textContent;
-        else if (tipo === 'Annuale') sottotitolo = refs.yearSub.textContent;
+        const dati = data.filtrati[tipo]; // CORRETTO: Cerca 'week', non 'settimanale'
 
         doc.setFontSize(18);
-        doc.text(titolo, 14, 20);
+        doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20);
         doc.setFontSize(12);
+
+        let sottotitolo = '';
+        if (tipo === 'week') sottotitolo = refs.weekSub.textContent;
+        else if (tipo === 'month') sottotitolo = refs.monthSub.textContent;
+        else if (tipo === 'year') sottotitolo = refs.yearSub.textContent;
         doc.text(sottotitolo, 14, 27);
 
         const totali = calcolaTotali(dati);
@@ -297,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             headStyles: { fillColor: [0, 86, 179] }
         });
 
-        if (dati.length > 0) {
+        if (dati && dati.length > 0) {
             const corpoTabellaDettaglio = dati.map(p => [
                 new Date(p.data).toLocaleDateString('it-IT'),
                 p.prodotto,
@@ -310,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        const nomeFile = `Riepilogo_${tipo}_${new Date().toISOString().split('T')[0]}.pdf`;
+        const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeFile);
     };
 
@@ -333,18 +330,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // COLLEGAMENTO DEGLI EVENTI
+    // COLLEGAMENTO DEGLI EVENTI (CORRETTO)
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
     refs.productSelect.addEventListener('change', gestisciSelezioneProdotto);
     Object.values(refs.navButtons).forEach(btn => btn.addEventListener('click', gestisciNavigazione));
-    refs.printButtons.week.addEventListener('click', () => generaPdf('Settimanale'));
-    refs.printButtons.month.addEventListener('click', () => generaPdf('Mensile'));
-    refs.printButtons.year.addEventListener('click', () => generaPdf('Annuale'));
-    refs.viewButtons.week.addEventListener('click', () => gestisciCambioVista('settimana'));
-    refs.viewButtons.month.addEventListener('click', () => gestisciCambioVista('mese'));
-    refs.viewButtons.year.addEventListener('click', () => gestisciCambioVista('anno'));
+    refs.printButtons.week.addEventListener('click', () => generaPdf('week', 'Settimanale'));
+    refs.printButtons.month.addEventListener('click', () => generaPdf('month', 'Mensile'));
+    refs.printButtons.year.addEventListener('click', () => generaPdf('year', 'Annuale'));
+    refs.viewButtons.week.addEventListener('click', () => gestisciCambioVista('week'));
+    refs.viewButtons.month.addEventListener('click', () => gestisciCambioVista('month'));
+    refs.viewButtons.year.addEventListener('click', () => gestisciCambioVista('year'));
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
 
