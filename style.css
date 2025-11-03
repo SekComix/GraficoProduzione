@@ -363,3 +363,71 @@ button:active {
     background-color: var(--success-color);
     transition: background-color 0.1s ease-in-out;
 }
+/* Stili per i pulsanti di azione nel riepilogo */
+.action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.stampa-btn, .analizza-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 0; /* Rimuove il margine precedente */
+}
+
+.analizza-btn {
+    background-color: var(--success-color);
+    color: white;
+}
+
+
+/* Stili specifici per il nuovo modal di analisi */
+#analisi-modal-overlay {
+    /* Stessi stili del modal di installazione */
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+}
+
+#analisi-modal-overlay .modal-content {
+    max-height: 80vh; /* Limita l'altezza massima */
+    overflow-y: auto; /* Aggiunge la barra di scorrimento se necessario */
+}
+
+#analisi-modal-titolo {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#analisi-modal-lista {
+    display: grid;
+    gap: 12px;
+}
+
+.analisi-categoria {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.analisi-prodotto {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-radius: 6px;
+    background-color: var(--light-gray);
+}
