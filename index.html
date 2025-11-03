@@ -34,37 +34,38 @@
                 <button type="submit" id="submit-button">Aggiungi</button>
             </form>
         </div>
-        <div class="card riepilogo-box" id="box-settimanale">
-            <div class="box-header"><h3>Riepilogo Settimanale</h3><div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div></div>
-            <p class="sottotitolo" id="intervallo-settimana"></p>
-            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-sett-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-sett-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-sett-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-sett-pz">0</span></p></div>
-            <button id="stampa-settimana" class="stampa-btn">Stampa Riepilogo</button>
-        </div>
-        
-        <div class="card" id="dettaglio-card">
+
+        <!-- NUOVO RIQUADRO DI RIEPILOGO DINAMICO -->
+        <div class="card" id="riepilogo-dinamico">
             <div class="dettaglio-header">
-                <h3>Dettaglio Produzioni</h3>
+                <h3 id="riepilogo-titolo">Riepilogo</h3>
                 <div class="view-controls">
                     <button id="view-week-btn" class="view-btn active">Settimana</button>
                     <button id="view-month-btn" class="view-btn">Mese</button>
                     <button id="view-year-btn" class="view-btn">Anno</button>
                 </div>
             </div>
+            <div class="nav-controls-wrapper">
+                <button id="nav-prev" class="nav-btn">&lt;</button>
+                <p class="sottotitolo" id="riepilogo-sottotitolo"></p>
+                <button id="nav-next" class="nav-btn">&gt;</button>
+            </div>
+            <button id="nav-today" class="nav-btn today-btn">Vai a Oggi</button>
+            <div class="totali">
+                <p>Punti Vendita (Kg): <span id="tot-pv-kg">0,0</span></p>
+                <p>Punti Vendita (Pz): <span id="tot-pv-pz">0</span></p>
+                <p>Biscotti (Kg): <span id="tot-bisc-kg">0,0</span></p>
+                <p>Biscotti (Pz): <span id="tot-bisc-pz">0</span></p>
+            </div>
+            <button id="stampa-riepilogo" class="stampa-btn">Stampa Riepilogo</button>
+        </div>
+        
+        <!-- DETTAGLIO PRODUZIONI (NON CAMBIA) -->
+        <div class="card" id="dettaglio-card">
+            <h3>Dettaglio Produzioni</h3>
             <ul id="elenco-produzioni"></ul>
         </div>
 
-        <div class="card riepilogo-box" id="box-mensile">
-            <div class="box-header"><h3>Riepilogo Mensile</h3><div class="nav-controls"><button id="prev-month" class="nav-btn">&lt;</button><button id="today-month" class="nav-btn">Oggi</button><button id="next-month" class="nav-btn">&gt;</button></div></div>
-            <p class="sottotitolo" id="mese-corrente"></p>
-            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-mese-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-mese-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-mese-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-mese-pz">0</span></p></div>
-            <button id="stampa-mese" class="stampa-btn">Stampa Riepilogo</button>
-        </div>
-        <div class="card riepilogo-box" id="box-annuale">
-            <div class="box-header"><h3>Riepilogo Annuale</h3><div class="nav-controls"><button id="prev-year" class="nav-btn">&lt;</button><button id="today-year" class="nav-btn">Oggi</button><button id="next-year" class="nav-btn">&gt;</button></div></div>
-            <p class="sottotitolo" id="anno-corrente"></p>
-            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-anno-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-anno-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-anno-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-anno-pz">0</span></p></div>
-            <button id="stampa-anno" class="stampa-btn">Stampa Riepilogo</button>
-        </div>
     </div>
     <button id="install-button">Installa App</button>
     <div class="modal-overlay" id="install-instructions-modal">
