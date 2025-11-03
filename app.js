@@ -117,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- FUNZIONE MODIFICATA ---
     const gestisciSubmitForm = (event) => {
         event.preventDefault();
         const quantitaStringa = refs.quantity.value.replace(',', '.');
@@ -138,7 +139,25 @@ document.addEventListener('DOMContentLoaded', () => {
         salvaDati();
         data.dataRif = new Date(refs.date.value);
         aggiornaUI();
-        resettaForm();
+        
+        // NUOVA PARTE: Feedback visivo
+        refs.submitBtn.classList.add('success');
+        refs.submitBtn.textContent = 'Salvato!';
+
+        const testoOriginale = refs.editId.value ? 'Salva Modifiche' : 'Aggiungi';
+        
+        resettaForm(); // Resetta il form subito, ma l'animazione continua
+
+        setTimeout(() => {
+            refs.submitBtn.classList.remove('success');
+            // Ripristina il testo corretto in base al contesto (Aggiungi o Salva Modifiche)
+            // Se nel frattempo si è cliccato modifica, il titolo del form sarà "Modifica Voce"
+            if(refs.formTitle.textContent === 'Modifica Voce') {
+                 refs.submitBtn.textContent = 'Salva Modifiche';
+            } else {
+                 refs.submitBtn.textContent = 'Aggiungi';
+            }
+        }, 1500); // 1.5 secondi
     };
 
     const gestisciClickLista = (event) => {
@@ -333,24 +352,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (datiPuntiVendita.length > 0) {
             const corpoTabellaPv = datiPuntiVendita.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
             doc.autoTable({
-                // MODIFICA QUI: L'intestazione della colonna ora è il titolo.
                 head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']],
                 body: corpoTabellaPv,
                 theme: 'grid',
                 headStyles: { fillColor: [40, 167, 69] }
-                // RIMOSSA la funzione didDrawPage che causava la sovrapposizione
             });
         }
 
         if (datiBiscotti.length > 0) {
             const corpoTabellaBiscotti = datiBiscotti.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
             doc.autoTable({
-                // MODIFICA QUI: L'intestazione della colonna ora è il titolo.
                 head: [['Data', 'Dettaglio Prodotti', 'Quantità']],
                 body: corpoTabellaBiscotti,
                 theme: 'grid',
                 headStyles: { fillColor: [255, 193, 7] }
-                 // RIMOSSA la funzione didDrawPage che causava la sovrapposizione
             });
         }
 
