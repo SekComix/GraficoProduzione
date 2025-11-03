@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM (AGGIORNATI)
+    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM
     const refs = {
         form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         navNext: document.getElementById('nav-next'),
         navToday: document.getElementById('nav-today'),
         stampaBtn: document.getElementById('stampa-riepilogo'),
-        analizzaBtn: document.getElementById('analizza-prodotti-btn'), // NUOVO
+        analizzaBtn: document.getElementById('analizza-prodotti-btn'),
         viewButtons: {
             week: document.getElementById('view-week-btn'),
             month: document.getElementById('view-month-btn'),
@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
         installBtn: document.getElementById('install-button'),
         installModal: document.getElementById('install-instructions-modal'),
         closeModalBtn: document.getElementById('close-modal-btn'),
-        // NUOVI RIFERIMENTI PER MODAL ANALISI
         analisiModal: document.getElementById('analisi-modal-overlay'),
         analisiModalCloseBtn: document.getElementById('analisi-modal-close-btn'),
         analisiModalTitolo: document.getElementById('analisi-modal-titolo'),
@@ -318,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 });
     };
     
-    // --- NUOVA FUNZIONE PER ANALISI PRODOTTI ---
     const analizzaProdotti = () => {
         const dati = data.filtrati[data.vistaCorrente];
         if (!dati || dati.length === 0) {
@@ -326,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Raggruppa e somma per prodotto
         const totaliPerProdotto = dati.reduce((acc, p) => {
             if (!acc[p.prodotto]) {
                 acc[p.prodotto] = { kg: 0, pezzi: 0, categoria: p.categoria };
@@ -339,7 +336,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return acc;
         }, {});
         
-        // Ordina e separa per categoria
         const prodottiOrdinati = Object.entries(totaliPerProdotto).sort((a, b) => a[0].localeCompare(b[0]));
         const puntiVendita = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Punti Vendita');
         const biscotti = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Biscotti');
@@ -362,7 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         refs.analisiModalLista.innerHTML = html;
-        refs.analisiModalTitolo.textContent = `Analisi Dettagliata - ${refs.riepilogoTitolo.textContent}`;
+        // MODIFICA QUI: Il titolo ora include il sottotitolo (date, mese o anno)
+        refs.analisiModalTitolo.textContent = `Analisi Prodotti: ${refs.riepilogoSottotitolo.textContent}`;
         refs.analisiModal.style.display = 'flex';
     };
 
@@ -417,7 +414,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- COLLEGAMENTO DEGLI EVENTI (AGGIORNATO) ---
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
@@ -436,9 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
     
-    // NUOVI EVENTI PER MODAL ANALISI
     refs.analizzaBtn.addEventListener('click', analizzaProdotti);
     refs.analisiModalCloseBtn.addEventListener('click', () => { refs.analisiModal.style.display = 'none'; });
+    // Chiude il modal anche se si clicca sullo sfondo scuro
+    refs.analisiModal.addEventListener('click', (event) => { if(event.target === refs.analisiModal) { refs.analisiModal.style.display = 'none'; } });
+
 
     caricaDati();
     resettaForm();
