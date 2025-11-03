@@ -4,132 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Grafico Produzione</title>
-    <style>
-        :root { --primary-color: #0056b3; --secondary-color: #6c757d; --light-gray: #f0f2f5; --border-color: #dee2e6; --danger-color: #dc3545; --warning-color: #ffc107;}
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--light-gray); margin: 0; padding: 10px; }
-        .container { max-width: 800px; margin: 0 auto; }
-        .app-header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding: 10px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .logo-img { width: 50px; height: 50px; object-fit: contain; background-color: #eee; border-radius: 8px; }
-        h1 { margin: 0; flex-grow: 1; font-size: 22px; color: var(--primary-color); }
-        .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        h2 { border-bottom: 2px solid var(--light-gray); padding-bottom: 10px; font-size: 20px; color: var(--primary-color); margin-top: 0; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #fff; }
-        button { border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        form { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        #submit-button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; margin-top: 10px; grid-column: 1 / -1; }
-        .hidden { display: none !important; }
-        @media (min-width: 600px) { form { grid-template-columns: 1fr 1fr; } }
-    </style>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0056b3">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
-<div class="container">
-    <div class="app-header">
-        <div class="logo-img"></div>
-        <h1>Grafico Produzione</h1>
+    <div class="container">
+        <div class="app-header">
+            <img src="logo.png" alt="Logo App" class="logo-img">
+            <h1>Grafico Produzione</h1>
+        </div>
+        <div class="card" id="form-card">
+            <h2 id="form-title">Aggiungi Voce</h2>
+            <form id="form-produzione">
+                <div class="form-group"><label for="data">Data</label><input type="date" id="data" required></div>
+                <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
+                <div class="form-group hidden" id="prodotto-select-wrapper"><label for="prodotto-select" id="label-prodotto"></label><select id="prodotto-select"></select></div>
+                <div class="form-group hidden" id="prodotto-input-wrapper"><label for="prodotto-input" id="label-prodotto-input"></label><input type="text" id="prodotto-input" placeholder="Digita il nuovo nome"></div>
+                <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" placeholder="Es. 4,5" required></div>
+                <div class="form-group"><label for="unita">Unità di Misura</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
+                <input type="hidden" id="edit-id">
+                <button type="submit" id="submit-button">Aggiungi</button>
+            </form>
+        </div>
+        <div class="card riepilogo-box" id="box-settimanale">
+            <div class="box-header"><h3>Riepilogo Settimanale</h3><div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div></div>
+            <p class="sottotitolo" id="intervallo-settimana"></p>
+            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-sett-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-sett-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-sett-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-sett-pz">0</span></p></div>
+            <ul id="elenco-produzioni"></ul>
+            <button id="stampa-settimana" class="stampa-btn">Stampa Riepilogo</button>
+        </div>
+        <div class="card riepilogo-box" id="box-mensile">
+            <div class="box-header"><h3>Riepilogo Mensile</h3><div class="nav-controls"><button id="prev-month" class="nav-btn">&lt;</button><button id="today-month" class="nav-btn">Oggi</button><button id="next-month" class="nav-btn">&gt;</button></div></div>
+            <p class="sottotitolo" id="mese-corrente"></p>
+            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-mese-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-mese-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-mese-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-mese-pz">0</span></p></div>
+            <button id="stampa-mese" class="stampa-btn">Stampa Riepilogo</button>
+        </div>
+        <div class="card riepilogo-box" id="box-annuale">
+            <div class="box-header"><h3>Riepilogo Annuale</h3><div class="nav-controls"><button id="prev-year" class="nav-btn">&lt;</button><button id="today-year" class="nav-btn">Oggi</button><button id="next-year" class="nav-btn">&gt;</button></div></div>
+            <p class="sottotitolo" id="anno-corrente"></p>
+            <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-anno-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-anno-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-anno-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-anno-pz">0</span></p></div>
+            <button id="stampa-anno" class="stampa-btn">Stampa Riepilogo</button>
+        </div>
     </div>
-    <div class="card">
-        <h2 id="form-title">Aggiungi Voce</h2>
-        <form>
-            <div class="form-group"><label for="data">Data</label><input type="date" id="data" required></div>
-            <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
-            <div class="form-group hidden" id="prodotto-select-wrapper"><label for="prodotto-select" id="label-prodotto"></label><select id="prodotto-select"></select></div>
-            <div class="form-group hidden" id="prodotto-input-wrapper"><label for="prodotto-input" id="label-prodotto-input"></label><input type="text" id="prodotto-input"></div>
-            <div class="form-group"><label for="quantita">Quantità</label><input type="text" inputmode="decimal" id="quantita" required></div>
-            <div class="form-group"><label for="unita">Unità</label><select id="unita" required><option value="Kg">Kg</option><option value="Pezzi">Pezzi</option></select></div>
-            <input type="hidden" id="edit-id">
-            <button type="button" id="submit-button">Aggiungi</button>
-        </form>
+    <button id="install-button">Installa App</button>
+    <div class="modal-overlay" id="install-instructions-modal">
+        <div class="modal-content">
+            <button class="close-btn" id="close-modal-btn">&times;</button>
+            <h3>Come installare l'App</h3>
+            <p><strong>Su Android (Chrome):</strong><br>1. Tocca i tre puntini (⋮) in alto a destra.<br>2. Seleziona "Installa app".</p>
+            <p><strong>Su iPhone (Safari):</strong><br>1. Tocca l'icona di condivisione ( quadrato con freccia in su ).<br>2. Scorri e seleziona "Aggiungi a schermata Home".</p>
+        </div>
     </div>
-    <div class="card">
-        <h3>Riepilogo Settimanale</h3>
-        <ul id="elenco-produzioni"></ul>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const refs = {
-        list: document.getElementById('elenco-produzioni'),
-        submitBtn: document.getElementById('submit-button'),
-        date: document.getElementById('data'),
-        category: document.getElementById('categoria'),
-        quantity: document.getElementById('quantita'),
-        unit: document.getElementById('unita'),
-        productSelectWrapper: document.getElementById('prodotto-select-wrapper'),
-        productInputWrapper: document.getElementById('prodotto-input-wrapper'),
-        productSelect: document.getElementById('prodotto-select'),
-        productInput: document.getElementById('prodotto-input'),
-    };
-    let produzioni = JSON.parse(localStorage.getItem('graficoProduzioneData')) || [];
-    const setDefaultDate = () => { refs.date.value = new Date().toISOString().split('T')[0]; };
-    const salvaDati = () => { localStorage.setItem('graficoProduzioneData', JSON.stringify(produzioni)); };
-    
-    const aggiornaUI = () => {
-        refs.list.innerHTML = '';
-        if (produzioni.length === 0) {
-            refs.list.innerHTML = '<li>Nessuna produzione inserita.</li>';
-            return;
-        }
-        produzioni.forEach(prod => {
-            const dataF = new Date(prod.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-            refs.list.innerHTML += `<li><span>${dataF} - ${prod.prodotto}: ${prod.quantita} ${prod.unita}</span></li>`;
-        });
-    };
-
-    const gestisciSubmitForm = () => {
-        if (!refs.date.value || !refs.category.value || !refs.quantity.value) {
-            alert("Compila tutti i campi!");
-            return;
-        }
-        let nome = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
-        if(!nome) nome = refs.productInput.value.trim();
-        if(!nome) {
-            alert("Seleziona o inserisci un prodotto!");
-            return;
-        }
-
-        const nuovaVoce = {
-            id: Date.now(),
-            data: refs.date.value,
-            categoria: refs.category.value,
-            prodotto: nome,
-            quantita: refs.quantity.value,
-            unita: refs.unit.value
-        };
-        produzioni.unshift(nuovaVoce);
-        salvaDati();
-        aggiornaUI();
-        // Reset manuale
-        setDefaultDate();
-        refs.category.value = '';
-        refs.productSelectWrapper.classList.add('hidden');
-        refs.productInputWrapper.classList.add('hidden');
-        refs.quantity.value = '';
-        refs.unit.value = 'Kg';
-    };
-
-    refs.category.addEventListener('change', () => {
-        refs.productSelectWrapper.classList.remove('hidden');
-        refs.productInputWrapper.classList.add('hidden');
-        refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option><option value="---altro---">--- Altro ---</option>';
-    });
-
-    refs.productSelect.addEventListener('change', () => {
-        if(refs.productSelect.value === '---altro---'){
-            refs.productInputWrapper.classList.remove('hidden');
-        } else {
-            refs.productInputWrapper.classList.add('hidden');
-        }
-    });
-
-    refs.submitBtn.addEventListener('click', gestisciSubmitForm);
-
-    setDefaultDate();
-    aggiornaUI();
-});
-</script>
-
+    <script src="app.js"></script>
 </body>
 </html>
