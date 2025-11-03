@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     };
-
+    
     const gestisciSubmitForm = (event) => {
         event.preventDefault();
         const quantitaStringa = refs.quantity.value.replace(',', '.');
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const unitaSelezionata = refs.unit.value;
         data.catalogo[nomeProdotto] = { categoria: categoriaSelezionata, unita: unitaSelezionata };
         
-        const isEditing = !!refs.editId.value; // Controlla se è una modifica PRIMA di salvare
+        const isEditing = !!refs.editId.value;
         const idDaModificare = refs.editId.value;
 
         if (idDaModificare) {
@@ -143,15 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         aggiornaUI();
         
-        // NUOVA PARTE: Feedback visivo specifico
         refs.submitBtn.classList.add('success');
-        refs.submitBtn.textContent = isEditing ? 'Modificato!' : 'Aggiunto!';
+        // MODIFICA QUI: Testo "FATTO!!!" o "MODIFICATO!!!"
+        refs.submitBtn.textContent = isEditing ? 'MODIFICATO!!!' : 'FATTO!!!';
         
         setTimeout(() => {
-            refs.submitBtn.classList.remove('success');
-            // Dopo l'animazione, resetta completamente il form
             resettaForm();
-        }, 1500); // 1.5 secondi
+        }, 1500); 
     };
 
     const gestisciClickLista = (event) => {
