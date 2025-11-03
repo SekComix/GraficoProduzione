@@ -35,7 +35,6 @@
             </form>
         </div>
 
-        <!-- NUOVO RIQUADRO DI RIEPILOGO DINAMICO -->
         <div class="card" id="riepilogo-dinamico">
             <div class="dettaglio-header">
                 <h3 id="riepilogo-titolo">Riepilogo</h3>
@@ -57,16 +56,21 @@
                 <p>Biscotti (Kg): <span id="tot-bisc-kg">0,0</span></p>
                 <p>Biscotti (Pz): <span id="tot-bisc-pz">0</span></p>
             </div>
-            <button id="stampa-riepilogo" class="stampa-btn">Stampa Riepilogo</button>
+            <!-- Pulsanti di azione -->
+            <div class="action-buttons">
+                <button id="stampa-riepilogo" class="stampa-btn">Stampa Riepilogo</button>
+                <button id="analizza-prodotti-btn" class="analizza-btn">Analizza Prodotti</button>
+            </div>
         </div>
         
-        <!-- DETTAGLIO PRODUZIONI -->
         <div class="card" id="dettaglio-card">
             <h3>Dettaglio Produzioni</h3>
             <ul id="elenco-produzioni"></ul>
         </div>
 
     </div>
+
+    <!-- MODAL PER INSTALLAZIONE APP (esistente) -->
     <button id="install-button">Installa App</button>
     <div class="modal-overlay" id="install-instructions-modal">
         <div class="modal-content">
@@ -76,6 +80,18 @@
             <p><strong>Su iPhone (Safari):</strong><br>1. Tocca l'icona di condivisione ( quadrato con freccia in su ).<br>2. Scorri e seleziona "Aggiungi a schermata Home".</p>
         </div>
     </div>
+
+    <!-- NUOVO MODAL PER ANALISI PRODOTTI -->
+    <div class="modal-overlay" id="analisi-modal-overlay">
+        <div class="modal-content">
+            <button class="close-btn" id="analisi-modal-close-btn">&times;</button>
+            <h3 id="analisi-modal-titolo">Analisi Dettagliata Prodotti</h3>
+            <div id="analisi-modal-lista">
+                <!-- Il contenuto verrà inserito qui dal JavaScript -->
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
