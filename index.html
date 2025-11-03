@@ -13,28 +13,14 @@
         h1 { margin: 0; flex-grow: 1; font-size: 22px; color: var(--primary-color); }
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
         h2 { border-bottom: 2px solid var(--light-gray); padding-bottom: 10px; font-size: 20px; color: var(--primary-color); margin-top: 0; }
-        h3 { color: var(--primary-color); margin: 0; padding: 0; border: none; }
         .form-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #495057; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; box-sizing: border-box; font-size: 16px; background-color: #fff; }
         button { border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        #form-produzione { display: grid; grid-template-columns: 1fr; gap: 15px; }
-        #submit-button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; margin-top: 10px; }
-        .riepilogo-box { margin-bottom: 20px; }
-        .box-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
-        .nav-controls { display: flex; gap: 5px; }
-        .nav-btn { background-color: #e9ecef; border: 1px solid #ced4da; color: #495057; padding: 2px 8px; border-radius: 4px; }
-        .sottotitolo { font-style: italic; color: var(--secondary-color); margin: 0 0 15px 0; text-align: center; }
-        .totali { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 15px; }
-        .totali p { font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; margin: 5px 0; }
-        .totali span { font-weight: normal; background-color: #e9ecef; padding: 2px 8px; border-radius: 4px; color: var(--primary-color); }
-        #elenco-produzioni { list-style-type: none; padding: 0; margin-top: 20px; min-height: 50px; }
-        #elenco-produzioni li { background-color: #fff; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .modifica-btn, .cancella-btn { padding: 5px 10px; white-space: nowrap; }
-        .modifica-btn { background-color: var(--warning-color); color: #212529; }
-        .cancella-btn { background-color: var(--danger-color); color: white; }
+        form { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        #submit-button { width: 100%; background-color: var(--primary-color); color: white; padding: 15px; margin-top: 10px; grid-column: 1 / -1; }
         .hidden { display: none !important; }
-        @media (min-width: 600px) { #form-produzione { grid-template-columns: 1fr 1fr; } }
+        @media (min-width: 600px) { form { grid-template-columns: 1fr 1fr; } }
     </style>
 </head>
 <body>
@@ -43,9 +29,9 @@
         <div class="logo-img"></div>
         <h1>Grafico Produzione</h1>
     </div>
-    <div class="card" id="form-card">
+    <div class="card">
         <h2 id="form-title">Aggiungi Voce</h2>
-        <form id="form-produzione">
+        <form>
             <div class="form-group"><label for="data">Data</label><input type="date" id="data" required></div>
             <div class="form-group"><label for="categoria">Categoria</label><select id="categoria" required><option value="" disabled selected>-- Seleziona --</option><option value="Punti Vendita">Punti Vendita</option><option value="Biscotti">Biscotti</option></select></div>
             <div class="form-group hidden" id="prodotto-select-wrapper"><label for="prodotto-select" id="label-prodotto"></label><select id="prodotto-select"></select></div>
@@ -56,16 +42,8 @@
             <button type="button" id="submit-button">Aggiungi</button>
         </form>
     </div>
-    <div class="card riepilogo-box" id="box-settimanale">
-        <div class="box-header">
-            <h3>Riepilogo Settimanale</h3>
-            <div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div>
-        </div>
-        <p class="sottotitolo" id="intervallo-settimana"></p>
-        <div class="totali">
-            <p>Punti Vendita (Kg): <span id="tot-pv-sett-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-sett-pz">0</span></p>
-            <p>Biscotti (Kg): <span id="tot-bisc-sett-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-sett-pz">0</span></p>
-        </div>
+    <div class="card">
+        <h3>Riepilogo Settimanale</h3>
         <ul id="elenco-produzioni"></ul>
     </div>
 </div>
@@ -73,177 +51,82 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const refs = {
-        form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
-        editId: document.getElementById('edit-id'),
-        formTitle: document.getElementById('form-title'),
         submitBtn: document.getElementById('submit-button'),
         date: document.getElementById('data'),
         category: document.getElementById('categoria'),
         quantity: document.getElementById('quantita'),
         unit: document.getElementById('unita'),
-        productLabel: document.getElementById('label-prodotto'),
         productSelectWrapper: document.getElementById('prodotto-select-wrapper'),
         productInputWrapper: document.getElementById('prodotto-input-wrapper'),
         productSelect: document.getElementById('prodotto-select'),
         productInput: document.getElementById('prodotto-input'),
-        productInputLabel: document.getElementById('label-prodotto-input'),
-        weekSub: document.getElementById('intervallo-settimana'),
-        weekElements: { kgPv: document.getElementById('tot-pv-sett-kg'), pzPv: document.getElementById('tot-pv-sett-pz'), kgBisc: document.getElementById('tot-bisc-sett-kg'), pzBisc: document.getElementById('tot-bisc-sett-pz') },
-        navButtons: { prevWeek: document.getElementById('prev-week'), todayWeek: document.getElementById('today-week'), nextWeek: document.getElementById('next-week') }
     };
-
-    const CATALOGO_VERSIONE = '5.3';
-    let data = { produzioni: [], catalogo: {}, dataRif: new Date() };
-
-    const catalogoDefault = {
-        "Mondadori": { categoria: "Punti Vendita", unita: "Kg" }, "Palazzolo": { categoria: "Punti Vendita", unita: "Kg" }, "Osio": { categoria: "Punti Vendita", unita: "Kg" }, "Cassano": { categoria: "Punti Vendita", unita: "Kg" }, "Carugate": { categoria: "Punti Vendita", unita: "Kg" }, "Negozio": { categoria: "Punti Vendita", unita: "Kg" }, "Ordini": { categoria: "Punti Vendita", unita: "Kg" },
-        "Esse": { categoria: "Biscotti", unita: "Kg" }, "Viennesi": { categoria: "Biscotti", unita: "Kg" }, "Fave": { categoria: "Biscotti", unita: "Pezzi" }
-    };
-
-    const salvaDati = () => { localStorage.setItem('graficoProduzioneData_v4', JSON.stringify({ version: CATALOGO_VERSIONE, catalogo: data.catalogo, produzioni: data.produzioni })); };
-    const caricaDati = () => {
-        const saved = JSON.parse(localStorage.getItem('graficoProduzioneData_v4')) || {};
-        data.produzioni = saved.produzioni || [];
-        if (saved.version !== CATALOGO_VERSIONE) {
-            data.catalogo = { ...catalogoDefault, ...saved.catalogo };
-        } else {
-            data.catalogo = saved.catalogo || catalogoDefault;
-        }
-        salvaDati();
-    };
-
-    const formattaNumero = (num, unita) => (unita === 'Pz') ? Math.round(num) : num.toFixed(1).replace('.', ',');
+    let produzioni = JSON.parse(localStorage.getItem('graficoProduzioneData')) || [];
     const setDefaultDate = () => { refs.date.value = new Date().toISOString().split('T')[0]; };
-
-    const popolaProdottiSelect = (cat) => {
-        refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option>';
-        Object.keys(data.catalogo).sort().forEach(nome => {
-            if (data.catalogo[nome].categoria === cat) refs.productSelect.innerHTML += `<option value="${nome}">${nome}</option>`;
-        });
-        refs.productSelect.innerHTML += '<option value="---altro---">--- Altro (digita nuovo) ---</option>';
-    };
-
-    const resettaForm = () => {
-        refs.form.reset(); refs.editId.value = ''; refs.formTitle.textContent = 'Aggiungi Voce';
-        refs.submitBtn.textContent = 'Aggiungi'; setDefaultDate();
-        refs.productSelectWrapper.classList.add('hidden');
-        refs.productInputWrapper.classList.add('hidden');
-        refs.category.value = '';
-    };
-
-    const gestisciCambioCategoria = () => {
-        const cat = refs.category.value;
-        refs.unit.value = 'Kg';
-        refs.productSelectWrapper.classList.add('hidden');
-        refs.productInputWrapper.classList.add('hidden');
-        if (cat) {
-            refs.productLabel.textContent = (cat === "Punti Vendita") ? "Punto Vendita:" : "Nome Prodotto:";
-            refs.productSelectWrapper.classList.remove('hidden');
-            popolaProdottiSelect(cat);
+    const salvaDati = () => { localStorage.setItem('graficoProduzioneData', JSON.stringify(produzioni)); };
+    
+    const aggiornaUI = () => {
+        refs.list.innerHTML = '';
+        if (produzioni.length === 0) {
+            refs.list.innerHTML = '<li>Nessuna produzione inserita.</li>';
+            return;
         }
+        produzioni.forEach(prod => {
+            const dataF = new Date(prod.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+            refs.list.innerHTML += `<li><span>${dataF} - ${prod.prodotto}: ${prod.quantita} ${prod.unita}</span></li>`;
+        });
     };
 
-    const gestisciSelezioneProdotto = () => {
-        const prod = refs.productSelect.value;
-        if (prod === '---altro---') {
+    const gestisciSubmitForm = () => {
+        if (!refs.date.value || !refs.category.value || !refs.quantity.value) {
+            alert("Compila tutti i campi!");
+            return;
+        }
+        let nome = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
+        if(!nome) nome = refs.productInput.value.trim();
+        if(!nome) {
+            alert("Seleziona o inserisci un prodotto!");
+            return;
+        }
+
+        const nuovaVoce = {
+            id: Date.now(),
+            data: refs.date.value,
+            categoria: refs.category.value,
+            prodotto: nome,
+            quantita: refs.quantity.value,
+            unita: refs.unit.value
+        };
+        produzioni.unshift(nuovaVoce);
+        salvaDati();
+        aggiornaUI();
+        // Reset manuale
+        setDefaultDate();
+        refs.category.value = '';
+        refs.productSelectWrapper.classList.add('hidden');
+        refs.productInputWrapper.classList.add('hidden');
+        refs.quantity.value = '';
+        refs.unit.value = 'Kg';
+    };
+
+    refs.category.addEventListener('change', () => {
+        refs.productSelectWrapper.classList.remove('hidden');
+        refs.productInputWrapper.classList.add('hidden');
+        refs.productSelect.innerHTML = '<option value="" disabled selected>-- Seleziona --</option><option value="---altro---">--- Altro ---</option>';
+    });
+
+    refs.productSelect.addEventListener('change', () => {
+        if(refs.productSelect.value === '---altro---'){
             refs.productInputWrapper.classList.remove('hidden');
-            refs.productInput.value = '';
-            refs.productInput.focus();
-            refs.productInputLabel.textContent = (refs.category.value === "Punti Vendita") ? "Nuovo Punto Vendita:" : "Nuovo Prodotto:";
         } else {
             refs.productInputWrapper.classList.add('hidden');
-            if (data.catalogo[prod]) refs.unit.value = data.catalogo[prod].unita;
         }
-    };
+    });
 
-    const gestisciSubmitForm = (event) => {
-        event.preventDefault(); // Questo previene il popup di Cortana
-        const qta = parseFloat(refs.quantity.value.replace(',', '.'));
-        if (isNaN(qta) || qta <= 0) return alert('Quantità non valida.');
-        
-        let nome = (refs.productSelect.value === '---altro---') ? refs.productInput.value.trim() : refs.productSelect.value;
-        if (!nome) return alert('Seleziona o inserisci un prodotto.');
-        
-        const cat = refs.category.value;
-        const unita = refs.unit.value;
-        data.catalogo[nome] = { categoria: cat, unita: unita };
-        
-        const id = refs.editId.value;
-        if (id) {
-            const index = data.produzioni.findIndex(p => p.id == id);
-            if (index > -1) data.produzioni[index] = { ...data.produzioni[index], data: refs.date.value, prodotto: nome, quantita: qta, categoria: cat, unita: unita };
-        } else {
-            data.produzioni.unshift({ id: Date.now(), data: refs.date.value, prodotto: nome, quantita: qta, categoria: cat, unita: unita });
-        }
-        
-        salvaDati();
-        aggiornaUI();
-        resettaForm();
-    };
-
-    const aggiornaUI = () => {
-        const anno = data.dataRif.getFullYear();
-        const mese = data.dataRif.getMonth();
-        const giorno = data.dataRif.getDate();
-        const primoGiornoMese = new Date(anno, mese, 1);
-        const offset = (primoGiornoMese.getDay() === 0) ? 6 : primoGiornoMese.getDay() - 1;
-        const settimanaDelMese = Math.floor((giorno + offset - 1) / 7);
-        let inizioGiornoSett = settimanaDelMese * 7 - offset + 1;
-        if (inizioGiornoSett < 1) inizioGiornoSett = 1;
-        let fineGiornoSett = inizioGiornoSett + 6;
-        const ultimoGiornoMese = new Date(anno, mese + 1, 0).getDate();
-        if (fineGiornoSett > ultimoGiornoMese) fineGiornoSett = ultimoGiornoMese;
-        const primoGiornoSettimana = new Date(anno, mese, inizioGiornoSett);
-        const ultimoGiornoSettimana = new Date(anno, mese, fineGiornoSett);
-
-        const produzioniVisibili = data.produzioni.filter(p => { 
-            const d = new Date(p.data); 
-            d.setHours(12,0,0,0);
-            return d >= primoGiornoSettimana && d <= ultimoGiornoSettimana; 
-        });
-        
-        refs.list.innerHTML = '';
-        if(produzioniVisibili.length === 0){
-            refs.list.innerHTML = '<li>Nessuna produzione per questo periodo.</li>';
-        } else {
-            produzioniVisibili.sort((a,b) => new Date(b.data) - new Date(a.data));
-            produzioniVisibili.forEach(prod => {
-                const dataF = new Date(prod.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
-                refs.list.innerHTML += `<li><span>${dataF} - ${prod.prodotto}: ${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</span></li>`;
-            });
-        }
-        
-        const totali = { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 };
-        produzioniVisibili.forEach(p => {
-            if (p.categoria === 'Punti Vendita') {
-                if (p.unita === 'Kg') totali.puntiVenditaKg += p.quantita; else totali.puntiVenditaPz += p.quantita;
-            } else if (p.categoria === 'Biscotti') {
-                if (p.unita === 'Kg') totali.biscottiKg += p.quantita; else totali.biscottiPz += p.quantita;
-            }
-        });
-
-        refs.weekElements.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg');
-        refs.weekElements.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz');
-        refs.weekElements.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg');
-        refs.weekElements.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz');
-
-        refs.weekSub.textContent = `Da ${primoGiornoSettimana.toLocaleDateString('it-IT')} a ${ultimoGiornoSettimana.toLocaleDateString('it-IT')}`;
-    };
-    
     refs.submitBtn.addEventListener('click', gestisciSubmitForm);
-    refs.category.addEventListener('change', gestisciCambioCategoria);
-    refs.productSelect.addEventListener('change', gestisciSelezioneProdotto);
-    Object.values(refs.navButtons).forEach(button => button.addEventListener('click', (event) => {
-        const id = event.target.id;
-        if (id.includes('today')) data.dataRif = new Date();
-        if (id.includes('prev-week')) data.dataRif.setDate(data.dataRif.getDate() - 7);
-        if (id.includes('next-week')) data.dataRif.setDate(data.dataRif.getDate() + 7);
-        aggiornaUI();
-    }));
 
-    caricaDati();
-    resettaForm();
+    setDefaultDate();
     aggiornaUI();
 });
 </script>
