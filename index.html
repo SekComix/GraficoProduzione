@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0056b3">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" href=icon.svg type="image/png">
-    <link rel="apple-touch-icon" href=icon.svg>
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="logo.png">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -17,7 +17,7 @@
 <body>
     <div class="container">
         <div class="app-header">
-            <img src=icon.svg alt="Logo App" class="logo-img">
+            <img src="logo.png" alt="Logo App" class="logo-img">
             <h1>Grafico Produzione</h1>
         </div>
         <div class="card" id="form-card">
@@ -37,9 +37,22 @@
             <div class="box-header"><h3>Riepilogo Settimanale</h3><div class="nav-controls"><button id="prev-week" class="nav-btn">&lt;</button><button id="today-week" class="nav-btn">Oggi</button><button id="next-week" class="nav-btn">&gt;</button></div></div>
             <p class="sottotitolo" id="intervallo-settimana"></p>
             <div class="totali"><p>Punti Vendita (Kg): <span id="tot-pv-sett-kg">0,0</span></p><p>Punti Vendita (Pz): <span id="tot-pv-sett-pz">0</span></p><p>Biscotti (Kg): <span id="tot-bisc-sett-kg">0,0</span></p><p>Biscotti (Pz): <span id="tot-bisc-sett-pz">0</span></p></div>
-            <ul id="elenco-produzioni"></ul>
             <button id="stampa-settimana" class="stampa-btn">Stampa Riepilogo</button>
         </div>
+        
+        <!-- NUOVA SEZIONE PER LA VISUALIZZAZIONE DETTAGLIATA -->
+        <div class="card" id="dettaglio-card">
+            <div class="dettaglio-header">
+                <h3>Dettaglio Produzioni</h3>
+                <div class="view-controls">
+                    <button id="view-week-btn" class="view-btn active">Settimana</button>
+                    <button id="view-month-btn" class="view-btn">Mese</button>
+                    <button id="view-year-btn" class="view-btn">Anno</button>
+                </div>
+            </div>
+            <ul id="elenco-produzioni"></ul>
+        </div>
+
         <div class="card riepilogo-box" id="box-mensile">
             <div class="box-header"><h3>Riepilogo Mensile</h3><div class="nav-controls"><button id="prev-month" class="nav-btn">&lt;</button><button id="today-month" class="nav-btn">Oggi</button><button id="next-month" class="nav-btn">&gt;</button></div></div>
             <p class="sottotitolo" id="mese-corrente"></p>
