@@ -56,10 +56,11 @@
                 <p>Biscotti (Kg): <span id="tot-bisc-kg">0,0</span></p>
                 <p>Biscotti (Pz): <span id="tot-bisc-pz">0</span></p>
             </div>
-            <!-- Pulsanti di azione -->
+            <!-- Pulsanti di azione aggiornati -->
             <div class="action-buttons">
-                <button id="stampa-riepilogo" class="stampa-btn">Stampa Riepilogo</button>
-                <button id="analizza-prodotti-btn" class="analizza-btn">Analizza Prodotti</button>
+                <button id="stampa-riepilogo" class="stampa-btn">Stampa PDF</button>
+                <button id="analizza-prodotti-btn" class="analizza-btn">Analizza</button>
+                <button id="esporta-csv-btn" class="esporta-btn">Esporta CSV</button>
             </div>
         </div>
         
@@ -70,7 +71,6 @@
 
     </div>
 
-    <!-- MODAL PER INSTALLAZIONE APP (esistente) -->
     <button id="install-button">Installa App</button>
     <div class="modal-overlay" id="install-instructions-modal">
         <div class="modal-content">
@@ -81,14 +81,11 @@
         </div>
     </div>
 
-    <!-- NUOVO MODAL PER ANALISI PRODOTTI -->
     <div class="modal-overlay" id="analisi-modal-overlay">
         <div class="modal-content">
             <button class="close-btn" id="analisi-modal-close-btn">&times;</button>
             <h3 id="analisi-modal-titolo">Analisi Dettagliata Prodotti</h3>
-            <div id="analisi-modal-lista">
-                <!-- Il contenuto verrà inserito qui dal JavaScript -->
-            </div>
+            <div id="analisi-modal-lista"></div>
         </div>
     </div>
 
