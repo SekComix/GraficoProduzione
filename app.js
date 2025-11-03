@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM
+    // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM (AGGIORNATI)
     const refs = {
         form: document.getElementById('form-produzione'),
         list: document.getElementById('elenco-produzioni'),
@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         navNext: document.getElementById('nav-next'),
         navToday: document.getElementById('nav-today'),
         stampaBtn: document.getElementById('stampa-riepilogo'),
+        analizzaBtn: document.getElementById('analizza-prodotti-btn'), // NUOVO
         viewButtons: {
             week: document.getElementById('view-week-btn'),
             month: document.getElementById('view-month-btn'),
@@ -34,6 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
         installBtn: document.getElementById('install-button'),
         installModal: document.getElementById('install-instructions-modal'),
         closeModalBtn: document.getElementById('close-modal-btn'),
+        // NUOVI RIFERIMENTI PER MODAL ANALISI
+        analisiModal: document.getElementById('analisi-modal-overlay'),
+        analisiModalCloseBtn: document.getElementById('analisi-modal-close-btn'),
+        analisiModalTitolo: document.getElementById('analisi-modal-titolo'),
+        analisiModalLista: document.getElementById('analisi-modal-lista'),
     };
 
     // 2. STATO DELL'APPLICAZIONE
@@ -144,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
         aggiornaUI();
         
         refs.submitBtn.classList.add('success');
-        // MODIFICA QUI: Testo "FATTO!!!" o "MODIFICATO!!!"
         refs.submitBtn.textContent = isEditing ? 'MODIFICATO!!!' : 'FATTO!!!';
         
         setTimeout(() => {
@@ -313,6 +318,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 });
     };
     
+    // --- NUOVA FUNZIONE PER ANALISI PRODOTTI ---
+    const analizzaProdotti = () => {
+        const dati = data.filtrati[data.vistaCorrente];
+        if (!dati || dati.length === 0) {
+            alert('Nessun dato da analizzare per questo periodo.');
+            return;
+        }
+
+        // Raggruppa e somma per prodotto
+        const totaliPerProdotto = dati.reduce((acc, p) => {
+            if (!acc[p.prodotto]) {
+                acc[p.prodotto] = { kg: 0, pezzi: 0, categoria: p.categoria };
+            }
+            if (p.unita === 'Kg') {
+                acc[p.prodotto].kg += p.quantita;
+            } else {
+                acc[p.prodotto].pezzi += p.quantita;
+            }
+            return acc;
+        }, {});
+        
+        // Ordina e separa per categoria
+        const prodottiOrdinati = Object.entries(totaliPerProdotto).sort((a, b) => a[0].localeCompare(b[0]));
+        const puntiVendita = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Punti Vendita');
+        const biscotti = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Biscotti');
+
+        let html = '';
+
+        if (puntiVendita.length > 0) {
+            html += '<h4 class="analisi-categoria">Punti Vendita</h4>';
+            puntiVendita.forEach(([nome, totali]) => {
+                const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`;
+                html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`;
+            });
+        }
+        if (biscotti.length > 0) {
+            html += '<h4 class="analisi-categoria">Biscotti</h4>';
+            biscotti.forEach(([nome, totali]) => {
+                const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`;
+                html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`;
+            });
+        }
+
+        refs.analisiModalLista.innerHTML = html;
+        refs.analisiModalTitolo.textContent = `Analisi Dettagliata - ${refs.riepilogoTitolo.textContent}`;
+        refs.analisiModal.style.display = 'flex';
+    };
+
     const generaPdf = (tipo, nomeVisualizzato) => {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
@@ -330,37 +383,19 @@ document.addEventListener('DOMContentLoaded', () => {
             ['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],
             ['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')]
         ];
-        doc.autoTable({
-            startY: 35,
-            head: [['Riepilogo Categorie', 'Totale']],
-            body: corpoTabellaTotali,
-            theme: 'striped',
-            headStyles: { fillColor: [0, 86, 179] }
-        });
+        doc.autoTable({ startY: 35, head: [['Riepilogo Categorie', 'Totale']], body: corpoTabellaTotali, theme: 'striped', headStyles: { fillColor: [0, 86, 179] } });
 
         const datiPuntiVendita = dati.filter(p => p.categoria === 'Punti Vendita');
         const datiBiscotti = dati.filter(p => p.categoria === 'Biscotti');
 
         if (datiPuntiVendita.length > 0) {
             const corpoTabellaPv = datiPuntiVendita.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
-            doc.autoTable({
-                head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']],
-                body: corpoTabellaPv,
-                theme: 'grid',
-                headStyles: { fillColor: [40, 167, 69] }
-            });
+            doc.autoTable({ head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']], body: corpoTabellaPv, theme: 'grid', headStyles: { fillColor: [40, 167, 69] } });
         }
-
         if (datiBiscotti.length > 0) {
             const corpoTabellaBiscotti = datiBiscotti.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]);
-            doc.autoTable({
-                head: [['Data', 'Dettaglio Prodotti', 'Quantità']],
-                body: corpoTabellaBiscotti,
-                theme: 'grid',
-                headStyles: { fillColor: [255, 193, 7] }
-            });
+            doc.autoTable({ head: [['Data', 'Dettaglio Prodotti', 'Quantità']], body: corpoTabellaBiscotti, theme: 'grid', headStyles: { fillColor: [255, 193, 7] } });
         }
-
         const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`;
         doc.save(nomeFile);
     };
@@ -382,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- COLLEGAMENTO DEGLI EVENTI (AGGIORNATO) ---
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
@@ -399,6 +435,10 @@ document.addEventListener('DOMContentLoaded', () => {
     refs.viewButtons.year.addEventListener('click', () => gestisciCambioVista('year'));
     if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
+    
+    // NUOVI EVENTI PER MODAL ANALISI
+    refs.analizzaBtn.addEventListener('click', analizzaProdotti);
+    refs.analisiModalCloseBtn.addEventListener('click', () => { refs.analisiModal.style.display = 'none'; });
 
     caricaDati();
     resettaForm();
