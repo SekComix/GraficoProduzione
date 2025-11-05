@@ -70,37 +70,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const calcolaTotali = (dati) => { if (!dati) return { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }; return dati.reduce((acc, p) => { if (p.categoria === 'Punti Vendita') { if (p.unita === 'Kg') acc.puntiVenditaKg += p.quantita; else acc.puntiVenditaPz += p.quantita; } else if (p.categoria === 'Biscotti') { if (p.unita === 'Kg') acc.biscottiKg += p.quantita; else acc.biscottiPz += p.quantita; } return acc; }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }); };
     const analizzaProdotti = () => { const dati = data.filtrati[data.vistaCorrente]; if (!dati || dati.length === 0) { alert('Nessun dato da analizzare per questo periodo.'); return; } const totaliPerProdotto = dati.reduce((acc, p) => { if (!acc[p.prodotto]) { acc[p.prodotto] = { kg: 0, pezzi: 0, categoria: p.categoria }; } if (p.unita === 'Kg') acc[p.prodotto].kg += p.quantita; else acc[p.prodotto].pezzi += p.quantita; return acc; }, {}); const prodottiOrdinati = Object.entries(totaliPerProdotto).sort((a, b) => a[0].localeCompare(b[0])); const puntiVendita = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Punti Vendita'); const biscotti = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Biscotti'); let html = ''; if (puntiVendita.length > 0) { html += '<h4 class="analisi-categoria">Punti Vendita</h4>'; puntiVendita.forEach(([nome, totali]) => { const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`; html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`; }); } if (biscotti.length > 0) { html += '<h4 class="analisi-categoria">Biscotti</h4>'; biscotti.forEach(([nome, totali]) => { const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`; html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`; }); } refs.analisiModalLista.innerHTML = html; refs.analisiModalTitolo.textContent = `Analisi Prodotti: ${refs.riepilogoSottotitolo.textContent}`; refs.analisiModal.style.display = 'flex'; };
     const generaPdf = (tipo, nomeVisualizzato) => { const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); const dati = data.filtrati[tipo]; doc.setFontSize(18); doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20); doc.setFontSize(12); doc.text(refs.riepilogoSottotitolo.textContent, 14, 27); const totali = calcolaTotali(dati); const corpoTabellaTotali = [ ['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')], ['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')] ]; doc.autoTable({ startY: 35, head: [['Riepilogo Categorie', 'Totale']], body: corpoTabellaTotali, theme: 'striped', headStyles: { fillColor: [0, 86, 179] } }); const datiPuntiVendita = dati.filter(p => p.categoria === 'Punti Vendita'); const datiBiscotti = dati.filter(p => p.categoria === 'Biscotti'); if (datiPuntiVendita.length > 0) { const corpoTabellaPv = datiPuntiVendita.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]); doc.autoTable({ head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']], body: corpoTabellaPv, theme: 'grid', headStyles: { fillColor: [40, 167, 69] } }); } if (datiBiscotti.length > 0) { const corpoTabellaBiscotti = datiBiscotti.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]); doc.autoTable({ head: [['Data', 'Dettaglio Prodotti', 'Quantità']], body: corpoTabellaBiscotti, theme: 'grid', headStyles: { fillColor: [255, 193, 7] } }); } const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`; doc.save(nomeFile); };
+    const esportaCSV = () => { const dati = data.filtrati[data.vistaCorrente]; if (!dati || dati.length === 0) { alert('Nessun dato da esportare per questo periodo.'); return; } const csvRows = []; const headers = ['Data', 'Categoria', 'Prodotto', 'Quantita', 'UnitaDiMisura']; csvRows.push(headers.join(',')); for (const p of dati) { const quantitaFormattata = p.quantita.toString().replace('.', ','); const row = [p.data, p.categoria, `"${p.prodotto.replace(/"/g, '""')}"`, quantitaFormattata, p.unita]; csvRows.push(row.join(',')); } const csvString = csvRows.join('\n'); const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' }); const nomeFile = `esportazione_${data.vistaCorrente}_${new Date().toISOString().split('T')[0]}.csv`; const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.setAttribute('download', nomeFile); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
 
-    // --- FUNZIONE ESPORTA CSV (CORRETTA) ---
-    const esportaCSV = () => {
-        const dati = data.filtrati[data.vistaCorrente];
-        if (!dati || dati.length === 0) {
-            alert('Nessun dato da esportare per questo periodo.');
-            return;
-        }
-        const csvRows = [];
-        const headers = ['Data', 'Categoria', 'Prodotto', 'Quantita', 'UnitaDiMisura'];
-        csvRows.push(headers.join(','));
-        for (const p of dati) {
-            const quantitaFormattata = p.quantita.toString().replace('.', ',');
-            // LA CORREZIONE È QUI: ho aggiunto la virgola mancante
-            const row = [p.data, p.categoria, `"${p.prodotto.replace(/"/g, '""')}"`, quantitaFormattata, p.unita];
-            csvRows.push(row.join(','));
-        }
-        const csvString = csvRows.join('\n');
-        const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
-        const nomeFile = `esportazione_${data.vistaCorrente}_${new Date().toISOString().split('T')[0]}.csv`;
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', nomeFile);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
+    // --- NUOVA LOGICA PER GESTIONE INSTALLAZIONE ---
     let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; if (refs.installBtn) refs.installBtn.style.display = 'block'; });
-    const gestisciInstallazione = async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') refs.installBtn.style.display = 'none'; deferredPrompt = null; } else if (refs.installModal) { refs.installModal.style.display = 'flex'; } };
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (refs.installBtn) refs.installBtn.style.display = 'block';
+    });
+
+    const gestisciInstallazioneAndroid = async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') refs.installBtn.style.display = 'none';
+            deferredPrompt = null;
+        } else {
+            // Se non c'è il prompt, mostra comunque le istruzioni generiche
+            refs.installModal.style.display = 'flex';
+        }
+    };
+    
+    // NUOVA FUNZIONE PER MOSTRARE ISTRUZIONI SU IOS
+    const gestisciInstallazioneIOS = () => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isInStandaloneMode = ('standalone' in window.navigator) && (window.navigator.standalone);
+        const haVistoIstruzioni = localStorage.getItem('haVistoIstruzioniIOS');
+
+        if (isIOS && !isInStandaloneMode && !haVistoIstruzioni) {
+            refs.installModal.style.display = 'flex';
+            localStorage.setItem('haVistoIstruzioniIOS', 'true');
+        }
+    };
+    
+    // --- COLLEGAMENTO DEGLI EVENTI ---
     refs.form.addEventListener('submit', gestisciSubmitForm);
     refs.list.addEventListener('click', gestisciClickLista);
     refs.category.addEventListener('change', gestisciCambioCategoria);
@@ -112,13 +116,16 @@ document.addEventListener('DOMContentLoaded', () => {
     refs.viewButtons.week.addEventListener('click', () => gestisciCambioVista('week'));
     refs.viewButtons.month.addEventListener('click', () => gestisciCambioVista('month'));
     refs.viewButtons.year.addEventListener('click', () => gestisciCambioVista('year'));
-    if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazione);
+    if (refs.installBtn) refs.installBtn.addEventListener('click', gestisciInstallazioneAndroid);
     if (refs.closeModalBtn) refs.closeModalBtn.addEventListener('click', () => { refs.installModal.style.display = 'none'; });
     refs.analizzaBtn.addEventListener('click', analizzaProdotti);
     refs.analisiModalCloseBtn.addEventListener('click', () => { refs.analisiModal.style.display = 'none'; });
     refs.analisiModal.addEventListener('click', (event) => { if(event.target === refs.analisiModal) { refs.analisiModal.style.display = 'none'; } });
     refs.esportaBtn.addEventListener('click', esportaCSV);
+
+    // --- AVVIO APPLICAZIONE ---
     caricaDati();
     resettaForm();
     aggiornaUI();
+    gestisciInstallazioneIOS(); // Esegui il controllo per iOS all'avvio
 });
