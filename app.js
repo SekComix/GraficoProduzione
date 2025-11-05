@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const oggi = new Date();
         const giorniTrascorsi = (oggi - dataUltimoExport) / (1000 * 60 * 60 * 24);
         
-        if (giorniTrascorsi * 24 * 60 * 60 > 10) {
+        if (giorniTrascorsi > 7) {
             refs.reminderBanner.classList.remove('hidden');
         }
     };
