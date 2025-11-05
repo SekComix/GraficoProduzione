@@ -446,3 +446,33 @@ button:active {
     font-size: 14px;
     padding: 12px 5px;
 }
+/* Stili per il banner di promemoria esportazione */
+.reminder-banner {
+    background-color: var(--warning-color);
+    color: #212529;
+    padding: 10px 15px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+.reminder-banner.hidden {
+    display: none;
+}
+#close-reminder-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    margin-left: 15px;
+    cursor: pointer;
+    line-height: 1;
+}```
+
+**Passo 3: Sostituisci `app.js`**
+Infine, sostituisci completamente il tuo `app.js` con questo codice che contiene tutta la nuova logica.
+
+```javascript
+// Il codice completo per app.js sarà nel prossimo messaggio a causa dei limiti di lunghezza
