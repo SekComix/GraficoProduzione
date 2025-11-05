@@ -16,6 +16,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
+    <!-- NUOVO BANNER DI PROMEMORIA -->
+    <div id="export-reminder" class="reminder-banner hidden">
+        <span>Ricorda di esportare il report settimanale!</span>
+        <button id="close-reminder-btn">&times;</button>
+    </div>
+
     <div class="container">
         <div class="app-header">
             <img src="logo.png" alt="Logo App" class="logo-img">
@@ -67,7 +73,6 @@
             <h3>Dettaglio Produzioni</h3>
             <ul id="elenco-produzioni"></ul>
         </div>
-
     </div>
 
     <button id="install-button">Installa App</button>
@@ -76,7 +81,7 @@
             <button class="close-btn" id="close-modal-btn">&times;</button>
             <h3>Come installare l'App</h3>
             <p><strong>Su Android (Chrome):</strong><br>1. Tocca i tre puntini (⋮) in alto a destra.<br>2. Seleziona "Installa app".</p>
-            <p><strong>Su iPhone (Safari):</strong><br>1. Tocca l'icona di condivisione ( quadrato con freccia in su ).<br>2. Scorri e seleziona "Aggiungi a schermata Home".</p>
+            <p><strong>Su iPhone/iPad (Safari):</strong><br>1. Tocca l'icona di condivisione ( quadrato con freccia in su ).<br>2. Scorri e seleziona "Aggiungi a schermata Home".</p>
         </div>
     </div>
 
