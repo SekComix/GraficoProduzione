@@ -94,8 +94,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const csvString = csvRows.join('\n');
         const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
-        const nomeFile = `esportazione_${data.vistaCorrente}_${new Date().toISOString().split('T')[0]}.csv`;
         
+        // ***************************************************************
+        // --- INIZIO DELLA MODIFICA PER IL NOME DEL FILE ---
+        // ***************************************************************
+
+        // 1. Otteniamo la data di oggi e formattiamola come AAAA-MM-GG
+        const oggi = new Date();
+        const anno = oggi.getFullYear();
+        const mese = ('0' + (oggi.getMonth() + 1)).slice(-2);
+        const giorno = ('0' + oggi.getDate()).slice(-2);
+        const dataFormattata = `${anno}-${mese}-${giorno}`; // Es. "2025-11-08"
+
+        // 2. Creiamo il nome del file usando la data formattata
+        const nomeFile = `Report_Produzione_${dataFormattata}.csv`; // Risultato: "Report_Produzione_2025-11-08.csv"
+        
+        // ***************************************************************
+        // --- FINE DELLA MODIFICA ---
+        // ***************************************************************
+
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.setAttribute('download', nomeFile);
