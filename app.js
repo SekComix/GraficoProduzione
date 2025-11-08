@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- IMPOSTAZIONI PERSONALIZZABILI ---
     const EMAIL_DESTINATARIO = "cominellis57@gmail.com"; 
+    const GIORNI_PER_CONSOLIDAMENTO = 14; // Imposta qui il numero di giorni per bloccare le modifiche
 
     // 1. RIFERIMENTI AGLI ELEMENTI DEL DOM
     const refs = {
@@ -71,48 +72,111 @@ document.addEventListener('DOMContentLoaded', () => {
     const gestisciNavigazione = (azione) => { if (azione === 'today') { data.dataRif = new Date(); } else { const step = (azione === 'prev') ? -1 : 1; if (data.vistaCorrente === 'week') data.dataRif.setDate(data.dataRif.getDate() + (7 * step)); if (data.vistaCorrente === 'month') data.dataRif.setMonth(data.dataRif.getMonth() + step); if (data.vistaCorrente === 'year') data.dataRif.setFullYear(data.dataRif.getFullYear() + step); } aggiornaUI(); };
     const gestisciCambioVista = (vista) => { data.vistaCorrente = vista; Object.values(refs.viewButtons).forEach(btn => btn.classList.remove('active')); refs.viewButtons[vista].classList.add('active'); aggiornaUI(); };
     const aggiornaUI = () => { const anno = data.dataRif.getFullYear(); const mese = data.dataRif.getMonth(); const inizioSettimana = new Date(data.dataRif); inizioSettimana.setDate(inizioSettimana.getDate() - (inizioSettimana.getDay() === 0 ? 6 : inizioSettimana.getDay() - 1)); inizioSettimana.setHours(0, 0, 0, 0); const fineSettimana = new Date(inizioSettimana); fineSettimana.setDate(inizioSettimana.getDate() + 6); fineSettimana.setHours(23, 59, 59, 999); data.filtrati.week = data.produzioni.filter(p => { const d = new Date(p.data); d.setHours(12, 0, 0, 0); return d >= inizioSettimana && d <= fineSettimana; }); data.filtrati.month = data.produzioni.filter(p => { const d = new Date(p.data); return d.getFullYear() === anno && d.getMonth() === mese; }); data.filtrati.year = data.produzioni.filter(p => new Date(p.data).getFullYear() === anno); const vista = data.vistaCorrente; const datiVistaCorrente = data.filtrati[vista]; let titolo = '', sottotitolo = ''; if (vista === 'week') { titolo = 'Riepilogo Settimanale'; sottotitolo = `Da ${inizioSettimana.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })} a ${fineSettimana.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}`; } else if (vista === 'month') { titolo = 'Riepilogo Mensile'; sottotitolo = new Date(anno, mese).toLocaleString('it-IT', { month: 'long', year: 'numeric' }).toUpperCase(); } else if (vista === 'year') { titolo = 'Riepilogo Annuale'; sottotitolo = anno.toString(); } refs.riepilogoTitolo.textContent = titolo; refs.riepilogoSottotitolo.textContent = sottotitolo; const totali = calcolaTotali(datiVistaCorrente); refs.riepilogoElementi.kgPv.textContent = formattaNumero(totali.puntiVenditaKg, 'Kg'); refs.riepilogoElementi.pzPv.textContent = formattaNumero(totali.puntiVenditaPz, 'Pz'); refs.riepilogoElementi.kgBisc.textContent = formattaNumero(totali.biscottiKg, 'Kg'); refs.riepilogoElementi.pzBisc.textContent = formattaNumero(totali.biscottiPz, 'Pz'); aggiornaListaDettaglio(); };
-    const aggiornaListaDettaglio = () => { const datiDaVisualizzare = data.filtrati[data.vistaCorrente]; refs.list.innerHTML = ''; if (!datiDaVisualizzare || datiDaVisualizzare.length === 0) { refs.list.innerHTML = '<li class="nessuna-voce">Nessuna produzione per questo periodo.</li>'; return; } const produzioniPerGiorno = datiDaVisualizzare.reduce((acc, prod) => { const giorno = prod.data; if (!acc[giorno]) acc[giorno] = []; acc[giorno].push(prod); return acc; }, {}); for (const giorno in produzioniPerGiorno) { const dataFormattata = new Date(giorno).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long' }); let vociHtml = ''; produzioniPerGiorno[giorno].forEach(prod => { vociHtml += ` <div class="voce-produzione"> <span>${prod.prodotto}: <b>${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</b></span> <div class="bottoni-voce"> <button class="modifica-btn" data-id="${prod.id}">Modifica</button> <button class="cancella-btn" data-id="${prod.id}">Cancella</button> </div> </div> `; }); refs.list.innerHTML += ` <li class="gruppo-giorno"> <div class="header-giorno"> <h4>${dataFormattata}</h4> <button class="gestisci-giorno-btn" data-data="${giorno}">Gestisci Voci</button> </div> <div class="voci-giorno" data-data="${giorno}"> ${vociHtml} </div> </li> `; } };
+    
+    // --- NUOVA MODIFICA: AGGIORNAMENTO DELLA LISTA CON BLOCCO DEI VECCHI RECORD ---
+    const aggiornaListaDettaglio = () => {
+        const datiDaVisualizzare = data.filtrati[data.vistaCorrente];
+        refs.list.innerHTML = '';
+        if (!datiDaVisualizzare || datiDaVisualizzare.length === 0) {
+            refs.list.innerHTML = '<li class="nessuna-voce">Nessuna produzione per questo periodo.</li>';
+            return;
+        }
+
+        const oggi = new Date();
+        oggi.setHours(0, 0, 0, 0); // Normalizza la data di oggi per un confronto corretto
+
+        const produzioniPerGiorno = datiDaVisualizzare.reduce((acc, prod) => {
+            const giorno = prod.data;
+            if (!acc[giorno]) acc[giorno] = [];
+            acc[giorno].push(prod);
+            return acc;
+        }, {});
+
+        for (const giorno in produzioniPerGiorno) {
+            const dataFormattata = new Date(giorno).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long' });
+            let vociHtml = '';
+
+            produzioniPerGiorno[giorno].forEach(prod => {
+                const dataProduzione = new Date(prod.data);
+                dataProduzione.setHours(0, 0, 0, 0);
+
+                const differenzaGiorni = (oggi - dataProduzione) / (1000 * 60 * 60 * 24);
+                const isConsolidato = differenzaGiorni >= GIORNI_PER_CONSOLIDAMENTO;
+
+                let bottoniHtml = '';
+                if (isConsolidato) {
+                    // Se il dato è consolidato, mostra i bottoni disattivati e l'icona del lucchetto
+                    bottoniHtml = `
+                        <button class="modifica-btn disabled-btn" disabled>Modifica</button>
+                        <button class="cancella-btn disabled-btn" disabled>Cancella</button>
+                        <span class="lock-icon" title="Dato consolidato non modificabile">🔒</span>
+                    `;
+                } else {
+                    // Altrimenti, mostra i bottoni normali
+                    bottoniHtml = `
+                        <button class="modifica-btn" data-id="${prod.id}">Modifica</button>
+                        <button class="cancella-btn" data-id="${prod.id}">Cancella</button>
+                    `;
+                }
+
+                vociHtml += `
+                    <div class="voce-produzione">
+                        <span>${prod.prodotto}: <b>${formattaNumero(prod.quantita, prod.unita)} ${prod.unita}</b></span>
+                        <div class="bottoni-voce">
+                           ${bottoniHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            refs.list.innerHTML += `
+                <li class="gruppo-giorno">
+                    <div class="header-giorno">
+                        <h4>${dataFormattata}</h4>
+                        <button class="gestisci-giorno-btn" data-data="${giorno}">Gestisci Voci</button>
+                    </div>
+                    <div class="voci-giorno" data-data="${giorno}">
+                        ${vociHtml}
+                    </div>
+                </li>
+            `;
+        }
+    };
+
     const calcolaTotali = (dati) => { if (!dati) return { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }; return dati.reduce((acc, p) => { if (p.categoria === 'Punti Vendita') { if (p.unita === 'Kg') acc.puntiVenditaKg += p.quantita; else acc.puntiVenditaPz += p.quantita; } else if (p.categoria === 'Biscotti') { if (p.unita === 'Kg') acc.biscottiKg += p.quantita; else acc.biscottiPz += p.quantita; } return acc; }, { puntiVenditaKg: 0, puntiVenditaPz: 0, biscottiKg: 0, biscottiPz: 0 }); };
     const analizzaProdotti = () => { const dati = data.filtrati[data.vistaCorrente]; if (!dati || dati.length === 0) { alert('Nessun dato da analizzare per questo periodo.'); return; } const totaliPerProdotto = dati.reduce((acc, p) => { if (!acc[p.prodotto]) { acc[p.prodotto] = { kg: 0, pezzi: 0, categoria: p.categoria }; } if (p.unita === 'Kg') acc[p.prodotto].kg += p.quantita; else acc[p.prodotto].pezzi += p.quantita; return acc; }, {}); const prodottiOrdinati = Object.entries(totaliPerProdotto).sort((a, b) => a[0].localeCompare(b[0])); const puntiVendita = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Punti Vendita'); const biscotti = prodottiOrdinati.filter(([_, value]) => value.categoria === 'Biscotti'); let html = ''; if (puntiVendita.length > 0) { html += '<h4 class="analisi-categoria">Punti Vendita</h4>'; puntiVendita.forEach(([nome, totali]) => { const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`; html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`; }); } if (biscotti.length > 0) { html += '<h4 class="analisi-categoria">Biscotti</h4>'; biscotti.forEach(([nome, totali]) => { const totaleStringa = totali.kg > 0 ? `<b>${formattaNumero(totali.kg, 'Kg')}</b> Kg` : `<b>${formattaNumero(totali.pezzi, 'Pezzi')}</b> Pezzi`; html += `<div class="analisi-prodotto"><span>${nome}</span><span>${totaleStringa}</span></div>`; }); } refs.analisiModalLista.innerHTML = html; refs.analisiModalTitolo.textContent = `Analisi Prodotti: ${refs.riepilogoSottotitolo.textContent}`; refs.analisiModal.style.display = 'flex'; };
     const generaPdf = (tipo, nomeVisualizzato) => { const { jsPDF } = window.jspdf; const doc = new jsPDF('p', 'mm', 'a4'); const dati = data.filtrati[tipo]; doc.setFontSize(18); doc.text(`Riepilogo Produzione ${nomeVisualizzato}`, 14, 20); doc.setFontSize(12); doc.text(refs.riepilogoSottotitolo.textContent, 14, 27); const totali = calcolaTotali(dati); const corpoTabellaTotali = [ ['Punti Vendita (Kg)', formattaNumero(totali.puntiVenditaKg, 'Kg')],['Punti Vendita (Pz)', formattaNumero(totali.puntiVenditaPz, 'Pz')], ['Biscotti (Kg)', formattaNumero(totali.biscottiKg, 'Kg')],['Biscotti (Pz)', formattaNumero(totali.biscottiPz, 'Pz')] ]; doc.autoTable({ startY: 35, head: [['Riepilogo Categorie', 'Totale']], body: corpoTabellaTotali, theme: 'striped', headStyles: { fillColor: [0, 86, 179] } }); const datiPuntiVendita = dati.filter(p => p.categoria === 'Punti Vendita'); const datiBiscotti = dati.filter(p => p.categoria === 'Biscotti'); if (datiPuntiVendita.length > 0) { const corpoTabellaPv = datiPuntiVendita.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]); doc.autoTable({ head: [['Data', 'Dettaglio Punti Vendita', 'Quantità']], body: corpoTabellaPv, theme: 'grid', headStyles: { fillColor: [40, 167, 69] } }); } if (datiBiscotti.length > 0) { const corpoTabellaBiscotti = datiBiscotti.map(p => [new Date(p.data).toLocaleDateString('it-IT'), p.prodotto, `${formattaNumero(p.quantita, p.unita)} ${p.unita}`]); doc.autoTable({ head: [['Data', 'Dettaglio Prodotti', 'Quantità']], body: corpoTabellaBiscotti, theme: 'grid', headStyles: { fillColor: [255, 193, 7] } }); } const nomeFile = `Riepilogo_${nomeVisualizzato}_${new Date().toISOString().split('T')[0]}.pdf`; doc.save(nomeFile); };
     
-    // --- FUNZIONE INVIA REPORT (MODIFICATA CON CONFERMA) ---
+    // --- NUOVA MODIFICA: AGGIUNTA DELLA COLONNA ID ALL'ESPORTAZIONE CSV ---
     const inviaReportViaEmail = () => {
-        const dati = data.filtrati[data.vistaCorrente];
+        // La funzione ora esporta TUTTI i dati, non solo quelli filtrati, per garantire che Excel abbia sempre lo storico completo.
+        const dati = data.produzioni; 
         if (!dati || dati.length === 0) {
-            alert('Nessun dato da esportare per questo periodo.');
+            alert('Nessun dato da esportare.');
             return;
         }
         
         const csvRows = [];
-        const headers = ['Data', 'Categoria', 'Prodotto', 'Quantita', 'UnitaDiMisura'];
+        // Aggiungiamo 'ID' come prima colonna
+        const headers = ['ID', 'Data', 'Categoria', 'Prodotto', 'Quantita', 'UnitaDiMisura'];
         csvRows.push(headers.join(','));
+
         for (const p of dati) {
             const quantitaFormattata = p.quantita.toString().replace('.', ',');
-            const row = [p.data, p.categoria, `"${p.prodotto.replace(/"/g, '""')}"`, quantitaFormattata, p.unita];
+            // Aggiungiamo p.id come primo elemento della riga
+            const row = [p.id, p.data, p.categoria, `"${p.prodotto.replace(/"/g, '""')}"`, quantitaFormattata, p.unita];
             csvRows.push(row.join(','));
         }
         const csvString = csvRows.join('\n');
         const blob = new Blob([`\uFEFF${csvString}`], { type: 'text/csv;charset=utf-8;' });
         
-        // ***************************************************************
-        // --- INIZIO DELLA MODIFICA PER IL NOME DEL FILE ---
-        // ***************************************************************
-
-        // 1. Otteniamo la data di oggi e formattiamola come AAAA-MM-GG
         const oggi = new Date();
         const anno = oggi.getFullYear();
         const mese = ('0' + (oggi.getMonth() + 1)).slice(-2);
         const giorno = ('0' + oggi.getDate()).slice(-2);
-        const dataFormattata = `${anno}-${mese}-${giorno}`; // Es. "2025-11-08"
-
-        // 2. Creiamo il nome del file usando la data formattata
-        const nomeFile = `Report_Produzione_${dataFormattata}.csv`; // Risultato: "Report_Produzione_2025-11-08.csv"
+        const dataFormattata = `${anno}-${mese}-${giorno}`;
+        const nomeFile = `Report_Produzione_${dataFormattata}.csv`;
         
-        // ***************************************************************
-        // --- FINE DELLA MODIFICA ---
-        // ***************************************************************
-
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.setAttribute('download', nomeFile);
@@ -123,12 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('ultimoExport', new Date().toISOString());
         if(refs.reminderBanner) refs.reminderBanner.classList.add('hidden');
 
-        // Mostra il messaggio di conferma e attende l'OK dell'utente
         alert("File CSV scaricato con successo nella cartella Download.\n\nClicca OK per aprire il tuo programma di posta e allegare il file.");
 
-        // Apre il client di posta solo dopo che l'utente ha cliccato OK
-        const soggetto = `Report Produzione - ${refs.riepilogoSottotitolo.textContent}`;
-        const corpo = "Ciao,\n\nin allegato trovi il report della produzione.\n\n(Il file .csv è stato salvato nella cartella Download del dispositivo).";
+        const soggetto = `Report Produzione Completo al ${dataFormattata}`;
+        const corpo = "Ciao,\n\nin allegato trovi il report completo della produzione.\n\n(Il file .csv è stato salvato nella cartella Download del dispositivo).";
         window.location.href = `mailto:${EMAIL_DESTINATARIO}?subject=${encodeURIComponent(soggetto)}&body=${encodeURIComponent(corpo)}`;
     };
 
