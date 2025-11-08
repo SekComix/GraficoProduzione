@@ -470,3 +470,17 @@ button:active {
     cursor: pointer;
     line-height: 1;
 }
+/* --- Stili per i record consolidati (bloccati) --- */
+
+.bottoni-voce .disabled-btn {
+    background-color: #e9ecef; /* Un grigio chiaro */
+    color: #adb5bd; /* Un grigio più scuro per il testo */
+    cursor: not-allowed; /* Mostra l'icona di "divieto" al passaggio del mouse */
+}
+
+.lock-icon {
+    font-size: 18px;
+    margin-left: 8px;
+    color: var(--secondary-color);
+    cursor: help; /* Mostra un punto di domanda al passaggio del mouse */
+}
